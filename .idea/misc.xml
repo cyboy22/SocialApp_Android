@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="app/src/main/res/layout/activity_compose_text.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_follow.xml" value="0.22" />
+        <entry key="app/src/main/res/layout/activity_following_legacy_content.xml" value="0.23645833333333333" />
+        <entry key="app/src/main/res/layout/activity_following_slidanet_content.xml" value="0.23645833333333333" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_main2.xml" value="0.2265625" />
+        <entry key="app/src/main/res/layout/activity_own_legacy_content.xml" value="0.23645833333333333" />
+        <entry key="app/src/main/res/layout/activity_own_slidanet_content.xml" value="0.23645833333333333" />
+        <entry key="app/src/main/res/layout/activity_post_options.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_register.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_select_image.xml" value="0.23645833333333333" />
+        <entry key="app/src/main/res/layout/activity_select_video.xml" value="0.23645833333333333" />
+        <entry key="app/src/main/res/layout/activity_toggle.xml" value="0.2265625" />
+        <entry key="app/src/main/res/layout/activity_toggle_following.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/activity_toggle_native.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/compose_text.xml" value="0.3385416666666667" />
+        <entry key="app/src/main/res/layout/following_legacy_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/following_slidanet_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/fragment_legacy_content.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_legacy_content_list.xml" value="0.40729166666666666" />
+        <entry key="app/src/main/res/layout/fragment_legacy_content_list_list.xml" value="0.3932291666666667" />
+        <entry key="app/src/main/res/layout/fragment_legacy_following.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_legacy_following2.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_legacy_native.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_post_options.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_register.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_slidanet_content.xml" value="0.23385416666666667" />
+        <entry key="app/src/main/res/layout/fragment_slidanet_following.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/fragment_slidanet_native.xml" value="0.23802083333333332" />
+        <entry key="app/src/main/res/layout/legacy_following_content.xml" value="0.3385416666666667" />
+        <entry key="app/src/main/res/layout/legacy_image_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/legacy_own_content.xml" value="0.3385416666666667" />
+        <entry key="app/src/main/res/layout/legacy_text_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/legacy_video_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/own_legacy_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/own_slidanet_item.xml" value="0.2635416666666667" />
+        <entry key="app/src/main/res/layout/post_content_options.xml" value="0.3385416666666667" />
+        <entry key="app/src/main/res/layout/slidanet_following_content.xml" value="0.3385416666666667" />
+        <entry key="app/src/main/res/layout/slidanet_own_content.xml" value="0.3385416666666667" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>

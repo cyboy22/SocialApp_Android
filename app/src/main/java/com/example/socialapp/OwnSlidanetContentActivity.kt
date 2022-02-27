@@ -24,6 +24,7 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_own_slidanet_content)
         SocialApp.networkMessageHandler = this
+
     }
 
     override fun onResume() {

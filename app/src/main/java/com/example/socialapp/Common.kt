@@ -124,6 +124,8 @@ object Constants {
      lateinit var slidanetPlatformName: String
      lateinit var slidanetPlatformId: String
      lateinit var slidanetPlatformPassword: String
+     lateinit var slidanetServiceIpAddress: String
+     lateinit var slidanetServiceIpPort: String
      lateinit var socialServer: SocialServer
      var connectedToServer: Boolean = false
      val activities = mutableMapOf<ActivityTracker, Intent>()
@@ -370,6 +372,10 @@ object Constants {
                          slidanetPlatformName = requireNotNull(this.getString(platformNameLength))
                          slidanetPlatformId = requireNotNull(this.getString(Constants.uuidWidth))
                          slidanetPlatformPassword = requireNotNull(this.getString(Constants.uuidWidth))
+                         val slidanetServiceIpAddressLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                         slidanetServiceIpAddress = requireNotNull(this.getString(slidanetServiceIpAddressLength))
+                         val slidanetServiceIpPortLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                         slidanetServiceIpPort = requireNotNull(this.getString(slidanetServiceIpPortLength))
 
                          sharedPreferences.edit()?.let {
                              it.putString(Constants.memberId, memberId)

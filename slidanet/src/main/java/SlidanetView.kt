@@ -119,39 +119,39 @@ internal class SlidanetView (private val viewId: String,
     }
 
     override fun onDown(p0: MotionEvent?): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onShowPress(p0: MotionEvent?) {
-        TODO("Not yet implemented")
+    
     }
 
     override fun onSingleTapUp(p0: MotionEvent?): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onLongPress(p0: MotionEvent?) {
-        TODO("Not yet implemented")
+        return
     }
 
     override fun onFling(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onSingleTapConfirmed(p0: MotionEvent?): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onDoubleTap(p0: MotionEvent?): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
-        TODO("Not yet implemented")
+        return true
     }
 
     override fun onSurfaceTextureAvailable(p0: SurfaceTexture, p1: Int, p2: Int) {

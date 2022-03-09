@@ -1,5 +1,5 @@
 import org.json.JSONObject
 
 interface SlidanetResponseHandler {
-    fun slidanetResponse(responseData: RequestData)
+    fun slidanetResponse(responseData: SlidanetResponseData)
 }

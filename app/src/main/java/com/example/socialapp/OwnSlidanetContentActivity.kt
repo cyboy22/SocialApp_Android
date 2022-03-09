@@ -20,11 +20,9 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         supportActionBar?.hide()
         actionBar?.hide()
 
-        initializeButton()
-
         setContentView(R.layout.activity_own_slidanet_content)
+        initializeButton()
         SocialApp.networkMessageHandler = this
-
     }
 
     override fun onResume() {
@@ -35,16 +33,25 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         if (!SocialApp.connectedToServer) {
             SocialApp.socialServer = SocialServer()
             SocialApp.receiveMessageHandler.post { SocialApp.socialServer.connect() }
+        } else {
+            initialize()
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+    }
 
-
-    fun initializeButton() {
+    private fun initializeButton() {
 
         postButton = findViewById(R.id.postButton)
+        postButton.setOnClickListener(this)
+
         followButton = findViewById(R.id.followButton)
+        followButton.setOnClickListener(this)
+
         legacyButton = findViewById(R.id.legacyButton)
+        legacyButton.setOnClickListener(this)
     }
 
     override fun onClick(p0: View?) {
@@ -54,16 +61,26 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         } else if (p0 == followButton) {
             followButtonClicked()
         } else if (p0 == legacyButton) {
-            slidanetButtonClicked()
+            legacyButtonClicked()
         }
     }
 
-    private fun slidanetButtonClicked() {
+    private fun legacyButtonClicked() {
 
+        SocialApp.activityTracker = ActivityTracker.OwnLegacyContent
+        startActivity(SocialApp.activities[SocialApp.activityTracker])
+
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Slidanet.disconnectFromNetwork()
     }
 
     private fun postButtonClicked() {
 
+        SocialApp.activityTracker = ActivityTracker.PostOptions
+        startActivity(SocialApp.activities[SocialApp.activityTracker])
     }
 
     private fun followButtonClicked() {
@@ -74,11 +91,31 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
     }
 
     override fun initialize() {
+
+        if (!SocialApp.listingsDownloadComplete) {
+            SocialApp.sendMessageHandler.post {
+                SocialApp.socialServer.getContentListingRequest()
+            }
+        }
+
+        if (!Slidanet.isConnected()) {
+
+            val response = Slidanet.connectToNetwork(platformName = SocialApp.slidanetPlatformName,
+                platformId = SocialApp.slidanetPlatformId,
+                platformPassword = SocialApp.slidanetPlatformPassword,
+                userId = SocialApp.slidanetId,
+                ipAddress = SocialApp.slidanetServiceIpAddress,
+                ipPort = SocialApp.slidanetServiceIpPort,
+                appContext = SocialApp.applicationContext,
+                responseHandler = SocialApp.slida)
+        }
     }
 
     override fun switchActivity(tracker: ActivityTracker) {
     }
 
     override fun refreshContent() {
+
+        val check = ""
     }
 }

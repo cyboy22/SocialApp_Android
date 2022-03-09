@@ -37,13 +37,6 @@ class OwnLegacyContentActivity : AppCompatActivity(),
         adapter = OwnLegacyContentAdapter()
         recyclerView.adapter = adapter
         adapter.notifyDataSetChanged()
-
-        val slidanetResponseCode = Slidanet.connectToNetwork(SocialApp.slidanetId,
-                                                             SocialApp.slidanetPlatformId,
-                                                             SocialApp.slidanetPlatformPassword,
-                                                             SocialApp.slidanetId,
-                                                             SocialApp.applicationContext,
-                                                             SocialApp.slida)
     }
 
     override fun onResume() {
@@ -52,8 +45,6 @@ class OwnLegacyContentActivity : AppCompatActivity(),
 
         SocialApp.networkMessageHandler = this
         SocialApp.connectToServer()
-
-
     }
 
     override fun onClick(p0: View?) {
@@ -76,11 +67,13 @@ class OwnLegacyContentActivity : AppCompatActivity(),
         followButton.setOnClickListener(this)
 
         slidanetButton = findViewById(R.id.slidanetButton)
-        followButton.setOnClickListener(this)
+        slidanetButton.setOnClickListener(this)
     }
 
     private fun slidanetButtonClicked() {
 
+        SocialApp.activityTracker = ActivityTracker.OwnSlidanetContent
+        startActivity(SocialApp.activities[SocialApp.activityTracker])
     }
 
     private fun postButtonClicked() {
@@ -113,8 +106,10 @@ class OwnLegacyContentActivity : AppCompatActivity(),
 
     override fun initialize() {
 
-        SocialApp.sendMessageHandler.post {
-            SocialApp.socialServer.getContentListingRequest()
+        if (!SocialApp.listingsDownloadComplete) {
+            SocialApp.sendMessageHandler.post {
+                SocialApp.socialServer.getContentListingRequest()
+            }
         }
     }
 

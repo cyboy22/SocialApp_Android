@@ -73,11 +73,10 @@ internal class SlidanetServer(): SlidanetRequest {
 
         connected = true
 
-        Slidanet.mainHandler?.post { Slidanet.server.authenticateConnection(Slidanet.requestId,
-                                                                            Slidanet.platformName,
-                                                                            Slidanet.platformPassword,
-                                                                            Slidanet.userId) }
-
+        authenticateConnection(Slidanet.requestId,
+                               Slidanet.platformName,
+                               Slidanet.platformPassword,
+                               Slidanet.userId)
     }
 
     @Throws(UnknownHostException::class,
@@ -108,9 +107,10 @@ internal class SlidanetServer(): SlidanetRequest {
 
     fun send(message: ByteArray) {
 
-        Slidanet.sendMessageHandler.post{
+        Slidanet.sendMessageHandler.post {
             outputStream?.write(message)
-            outputStream?.flush() }
+            outputStream?.flush()
+        }
     }
 
     override fun authenticateConnection(requestId: Int,
@@ -119,12 +119,26 @@ internal class SlidanetServer(): SlidanetRequest {
                                         userId: String
                                         ) {
 
-        SlidanetMessage(SlidanetMessageType.AuthenticateConnectionRequest_).apply {
+        SlidanetMessage(SlidanetMessageType.AuthenticateConnectionRequest).apply {
             putInteger(Constants.integerWidth, requestId)
             putInteger(Constants.nameWidth, platformName.length)
             putString(platformName)
             putString(platformPassword)
             putString(userId)
+        }.send()
+    }
+
+    override fun disconnectFromNetwork(requestId: Int) {
+
+        SlidanetMessage(SlidanetMessageType.DisconnectRequest).apply {
+            putInteger(Constants.integerWidth, requestId)
+        }.send()
+    }
+
+    override fun disconnectAllViews(requestId: Int) {
+
+        SlidanetMessage(SlidanetMessageType.DisconnectAllViewsRequest).apply {
+            putInteger(Constants.integerWidth, requestId)
         }.send()
     }
 }

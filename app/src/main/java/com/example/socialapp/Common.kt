@@ -1,8 +1,13 @@
 package com.example.socialapp
 
+import Slidanet
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Typeface
 import android.os.*
 import android.text.InputType
@@ -15,9 +20,11 @@ import android.widget.TextView
 import java.io.EOFException
 import java.io.File
 import java.io.File.separator
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.UnknownHostException
 import java.util.*
+
 
 enum class ActivityTracker { Register,
                              FollowingLegacyContent,
@@ -28,7 +35,7 @@ enum class ActivityTracker { Register,
                              SelectImage,
                              SelectVideo,
                              ComposeText,
-                             SelectMember}
+                             SelectMember }
 
 enum class ContentType (val value: Int) { Image(0),
                                           Video(1),
@@ -108,6 +115,7 @@ object Constants {
     const val usernameAlreadyExists = " already exists"
     const val invalidUserId = "invalid user ID"
     const val invalidMemberNameForMemberId = "invalid member name for member ID"
+    const val textIndent = 5
 }
 
  object SocialApp {
@@ -118,14 +126,16 @@ object Constants {
      lateinit var applicationContext: Context
      var activityTracker: ActivityTracker = ActivityTracker.Register
      lateinit var slidanetId: String
+     lateinit var slidanetIpAddress: String
+     var slidanetIpPort: Int = 0
      var memberId = ""
      var memberName = ""
      private var followingName = ""
      lateinit var slidanetPlatformName: String
      lateinit var slidanetPlatformId: String
      lateinit var slidanetPlatformPassword: String
-     lateinit var slidanetServiceIpAddress: String
-     lateinit var slidanetServiceIpPort: String
+     var slidanetServiceIpAddress = ""
+     var slidanetServiceIpPort: Int = 0
      lateinit var socialServer: SocialServer
      var connectedToServer: Boolean = false
      val activities = mutableMapOf<ActivityTracker, Intent>()
@@ -143,6 +153,7 @@ object Constants {
      var slidanetModeActive = false
      private var totalContentCount = 0
      private var actualContentCount = 0
+     var listingsDownloadComplete = false
      val slida = Slida()
 
      init {
@@ -374,8 +385,7 @@ object Constants {
                          slidanetPlatformPassword = requireNotNull(this.getString(Constants.uuidWidth))
                          val slidanetServiceIpAddressLength = requireNotNull(this.getInteger(Constants.nameWidth))
                          slidanetServiceIpAddress = requireNotNull(this.getString(slidanetServiceIpAddressLength))
-                         val slidanetServiceIpPortLength = requireNotNull(this.getInteger(Constants.nameWidth))
-                         slidanetServiceIpPort = requireNotNull(this.getString(slidanetServiceIpPortLength))
+                         slidanetServiceIpPort = requireNotNull(this.getInteger(Constants.integerWidth))
 
                          sharedPreferences.edit()?.let {
                              it.putString(Constants.memberId, memberId)
@@ -388,7 +398,6 @@ object Constants {
                          }
 
                          mainHandler?.post { networkMessageHandler.initialize() }
-
                      }
 
                      ClientResponseType.InvalidUserId -> {
@@ -421,7 +430,6 @@ object Constants {
                      ClientResponseType.Ok -> {
                          totalContentCount = requireNotNull(this.getInteger(Constants.integerWidth))
 
-
                          repeat(totalContentCount) {
                              val contentId = requireNotNull(this.getString(Constants.uuidWidth))
                              val contentType = requireNotNull(this.getInteger(Constants.nameWidth))
@@ -433,6 +441,7 @@ object Constants {
                                      actualContentCount++
                                  }
                              } else {
+
                                  actualContentCount++
                              }
                              val contentOwnerLength = requireNotNull(this.getInteger(Constants.nameWidth))
@@ -443,6 +452,26 @@ object Constants {
                              var text = ""
                              if (textLength > 0) {
                                  text = requireNotNull(this.getString(textLength))
+
+                                 if (contentType == ContentType.Text.ordinal) {
+                                     val file = File(contentId)
+
+                                     val cw = ContextWrapper(applicationContext)
+                                     val directory = cw.getDir("SocialAppContent", Context.MODE_PRIVATE)
+                                     if (!directory.exists()) {
+                                         directory.mkdir()
+                                     }
+
+                                     val bitmapFile = File(directory, contentId)
+                                     if (!bitmapFile.exists()) {
+                                         val bitmap = Slidanet.textToImage(text,
+                                             Typeface.DEFAULT,
+                                             14.0F,Color.BLACK, Color.WHITE,
+                                             density,Constants.textIndent,
+                                             applicationContext)
+                                         storeImage(bitmap, contentId)
+                                     }
+                                 }
                              }
 
                              socialContent.add(Content(contentId,
@@ -452,8 +481,12 @@ object Constants {
                                                        slidanetViewId))
                          }
 
+                         listingsDownloadComplete = true
+
                          if (totalContentCount == actualContentCount) {
-                             mainHandler?.post { networkMessageHandler.refreshContent() }
+                             if (activityTracker != ActivityTracker.OwnSlidanetContent && activityTracker != ActivityTracker.FollowingSlidanetContent) {
+                                 mainHandler?.post { networkMessageHandler.refreshContent() }
+                             }
                          }
                      }
                      else -> {}
@@ -540,6 +573,24 @@ object Constants {
              }
          }
      }
+
+     private fun storeImage(image: Bitmap, contentId: String) {
+
+         try {
+             val cw = ContextWrapper(applicationContext)
+             val directory = cw.getDir("SocialAppContent", Context.MODE_PRIVATE)
+             if (!directory.exists()) {
+                 directory.mkdir()
+             }
+
+             val path = File(directory, contentId)
+             val fos = FileOutputStream(path);
+             image.compress(Bitmap.CompressFormat.PNG, 100, fos)
+             fos.close()
+         } catch (e: java.lang.Exception) {
+             e.printStackTrace()
+         }
+     }
  }
 
 interface NetworkMessageHandler {
@@ -552,3 +603,5 @@ interface NetworkMessageHandler {
 fun createUUID() : String {
     return UUID.randomUUID().toString()
 }
+
+

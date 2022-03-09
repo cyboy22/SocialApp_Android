@@ -8,7 +8,7 @@ internal class SlidanetMessage {
     private val TAG = "SlidanetMessage"
     private var writeBody = ByteArrayOutputStream()
     private var readBody: ByteArrayInputStream? = null
-    private var messageType = SlidanetMessageType.SetRouterInfoRequest
+    private var messageType = SlidanetMessageType.AuthenticateConnectionRequest
     private var messageSize = 0
 
     constructor(messageType: SlidanetMessageType) {

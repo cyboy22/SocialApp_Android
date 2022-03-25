@@ -1,5 +1,6 @@
 package com.example.socialapp
 
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -20,6 +21,7 @@ class OwnLegacyContentActivity : AppCompatActivity(),
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: OwnLegacyContentAdapter
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -37,6 +39,7 @@ class OwnLegacyContentActivity : AppCompatActivity(),
         adapter = OwnLegacyContentAdapter()
         recyclerView.adapter = adapter
         adapter.notifyDataSetChanged()
+
     }
 
     override fun onResume() {

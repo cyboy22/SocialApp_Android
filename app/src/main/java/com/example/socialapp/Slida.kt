@@ -11,12 +11,17 @@ class Slida: SlidanetResponseHandler {
     override fun slidanetResponse(responseData: SlidanetResponseData) {
 
         when (responseData.requestCode) {
-            SlidanetRequestType.KConnectToNetwork -> {
+
+            SlidanetRequestType.Connect -> {
                 handleConnectToSlidanetResponse(responseData)
             }
 
-            SlidanetRequestType.KDisconnectFromNetwork -> {
+            SlidanetRequestType.Disconnect -> {
                 handleDisconnectFromSlidanetResponse(responseData)
+            }
+
+            SlidanetRequestType.ConnectContent -> {
+                handleConnectToViewResponse(responseData)
             }
 
             else -> {}
@@ -27,7 +32,7 @@ class Slida: SlidanetResponseHandler {
 
         when (slidanetResponseData.responseCode) {
 
-            SlidanetResponseType.KConnectionAuthenticated -> {
+            SlidanetResponseType.ConnectionAuthenticated -> {
                 if (SocialApp.activityTracker == ActivityTracker.OwnSlidanetContent) {
                     SocialApp.networkMessageHandler.refreshContent()
                 }
@@ -41,11 +46,50 @@ class Slida: SlidanetResponseHandler {
 
         when (slidanetResponseData.responseCode) {
 
-            SlidanetResponseType.KDisconnected_ -> {
+            SlidanetResponseType.Disconnected -> {
 
                 if (SocialApp.activityTracker == ActivityTracker.OwnLegacyContent) {
                     SocialApp.networkMessageHandler.refreshContent()
                 }
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun handleConnectToViewResponse(slidanetResponseData: SlidanetResponseData) {
+
+        when (slidanetResponseData.responseCode) {
+
+            SlidanetResponseType.AppContentConnectedToSlidanetAddress -> {
+
+                val requestData = slidanetResponseData.requestInfo
+                val viewId = requestData.getString(SlidanetConstants.content_address)
+
+                for (content in SocialApp.socialContent) {
+
+                    if (content.slidanetId == viewId) {
+
+                        content.objectWidth = requestData.getInt(SlidanetConstants.object_width)
+                        content.objectHeight = requestData.getInt(SlidanetConstants.object_height)
+                        SocialApp.slidanetViews[viewId] = (slidanetResponseData.slidanetView)!!
+                        val index = SocialApp.socialContent.indexOfFirst {
+                            it.slidanetId == viewId
+                        }
+                        if (SocialApp.activityTracker == ActivityTracker.OwnSlidanetContent ||
+                                SocialApp.activityTracker == ActivityTracker.FollowingSlidanetContent) {
+                            SocialApp.slidanetCallbacks.refreshSlidanetContent(index)
+                        }
+                    }
+                }
+            }
+
+            SlidanetResponseType.InvalidSlidanetContentAddressForPlatform -> {
+
+            }
+
+            SlidanetResponseType.SlidanetContentAddressNotFound -> {
+
             }
 
             else -> {}

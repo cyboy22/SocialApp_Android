@@ -1,18 +1,25 @@
 package com.example.socialapp
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class OwnSlidanetContentActivity : AppCompatActivity(),
                                    NetworkMessageHandler,
+                                   SlidanetCallbacks,
                                    View.OnClickListener {
 
     private lateinit var postButton: Button
     private lateinit var followButton: Button
     private lateinit var legacyButton: Button
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: OwnSlidanetContentAdapter
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -23,6 +30,13 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         setContentView(R.layout.activity_own_slidanet_content)
         initializeButton()
         SocialApp.networkMessageHandler = this
+        SocialApp.slidanetCallbacks = this
+
+        recyclerView = findViewById(R.id.slidanetOwnRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(applicationContext)
+        adapter = OwnSlidanetContentAdapter()
+        recyclerView.adapter = adapter
+        adapter.notifyDataSetChanged()
     }
 
     override fun onResume() {
@@ -74,7 +88,7 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
     override fun onPause() {
         super.onPause()
-        Slidanet.disconnectFromNetwork()
+        Slidanet.disconnect()
     }
 
     private fun postButtonClicked() {
@@ -100,14 +114,13 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
         if (!Slidanet.isConnected()) {
 
-            val response = Slidanet.connectToNetwork(platformName = SocialApp.slidanetPlatformName,
-                platformId = SocialApp.slidanetPlatformId,
-                platformPassword = SocialApp.slidanetPlatformPassword,
-                userId = SocialApp.slidanetId,
-                ipAddress = SocialApp.slidanetServiceIpAddress,
-                ipPort = SocialApp.slidanetServiceIpPort,
-                appContext = SocialApp.applicationContext,
-                responseHandler = SocialApp.slida)
+            val response = Slidanet.connect(applicationName = SocialApp.slidanetPlatformName,
+                                            applicationPassword = SocialApp.slidanetPlatformPassword,
+                                            slidaName = SocialApp.slidanetId,
+                                            ipAddress = SocialApp.slidanetServiceIpAddress,
+                                            ipPort = SocialApp.slidanetServiceIpPort,
+                                            appContext = SocialApp.applicationContext,
+                                            responseHandler = SocialApp.slida)
         }
     }
 
@@ -117,5 +130,10 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
     override fun refreshContent() {
 
         val check = ""
+    }
+
+    override fun refreshSlidanetContent(index: Int) {
+
+        adapter.notifyItemChanged(index)
     }
 }

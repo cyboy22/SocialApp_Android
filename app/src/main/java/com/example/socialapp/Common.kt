@@ -17,6 +17,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import java.io.EOFException
 import java.io.File
 import java.io.File.separator
@@ -116,6 +117,8 @@ object Constants {
     const val invalidUserId = "invalid user ID"
     const val invalidMemberNameForMemberId = "invalid member name for member ID"
     const val textIndent = 5
+    const val rowSizeScaling = 3.0F
+    const val contentDirectory = "SocialAppContent"
 }
 
  object SocialApp {
@@ -138,6 +141,7 @@ object Constants {
      var slidanetServiceIpPort: Int = 0
      lateinit var socialServer: SocialServer
      var connectedToServer: Boolean = false
+     val slidanetViews = mutableMapOf<String, ConstraintLayout>()
      val activities = mutableMapOf<ActivityTracker, Intent>()
      var mainHandler: Handler? = Handler(Looper.getMainLooper())
      private var serverReadThread = HandlerThread(Constants.serverReadThread,
@@ -147,6 +151,7 @@ object Constants {
      var sendMessageHandler: Handler
      var receiveMessageHandler: Handler
      lateinit var networkMessageHandler: NetworkMessageHandler
+     lateinit var slidanetCallbacks: SlidanetCallbacks
      val locale: Locale = Locale.ENGLISH
      lateinit var sharedPreferences: SharedPreferences
      var socialContent = ArrayList<Content>()
@@ -450,6 +455,7 @@ object Constants {
                              val slidanetViewId = requireNotNull(this.getString(slidanetViewIdLength))
                              val textLength = requireNotNull(this.getInteger(Constants.integerWidth))
                              var text = ""
+
                              if (textLength > 0) {
                                  text = requireNotNull(this.getString(textLength))
 
@@ -457,12 +463,13 @@ object Constants {
                                      val file = File(contentId)
 
                                      val cw = ContextWrapper(applicationContext)
-                                     val directory = cw.getDir("SocialAppContent", Context.MODE_PRIVATE)
+                                     val directory = cw.getDir(Constants.contentDirectory, Context.MODE_PRIVATE)
                                      if (!directory.exists()) {
                                          directory.mkdir()
                                      }
 
                                      val bitmapFile = File(directory, contentId)
+
                                      if (!bitmapFile.exists()) {
                                          val bitmap = Slidanet.textToImage(text,
                                              Typeface.DEFAULT,
@@ -474,11 +481,11 @@ object Constants {
                                  }
                              }
 
-                             socialContent.add(Content(contentId,
-                                                       ContentType.getByValue(contentType)!!,
-                                                       contentOwner,
-                                                       text,
-                                                       slidanetViewId))
+                             socialContent.add(Content(contentId = contentId,
+                                                       contentType =  ContentType.getByValue(contentType)!!,
+                                                       contentOwner = contentOwner,
+                                                       text = text,
+                                                       slidanetId = slidanetViewId))
                          }
 
                          listingsDownloadComplete = true
@@ -547,24 +554,29 @@ object Constants {
 
                      ClientResponseType.Ok -> {
 
+                         var text: String = ""
                          val contentType = requireNotNull(this.getInteger(Constants.nameWidth))
-                         var contextId = ""
-                         if (ContentType.getByValue(contentType) != ContentType.Text) {
-                             contextId = requireNotNull(this.getString(Constants.uuidWidth))
-                             // find file with name contextId
-                             // rename to contentId
-                         }
-
                          val contentId = requireNotNull(this.getString(Constants.uuidWidth))
-                         val textLength = requireNotNull(this.getInteger(Constants.integerWidth))
-                         val text = requireNotNull(this.getString(textLength))
                          val slidanetViewId = requireNotNull(this.getString(Constants.uuidWidth))
 
-                         socialContent.add(Content(contentId,
-                                           ContentType.getByValue(contentType)!!,
-                                           memberId,
-                                           text,
-                                           slidanetViewId))
+                         if (ContentType.getByValue(contentType) != ContentType.Text) {
+                             val contextId = requireNotNull(this.getString(Constants.uuidWidth))
+                             val contentPath = applicationContext.filesDir.absolutePath + "/" + contextId
+                             val file = File(contentPath)
+                             if (file.exists()) {
+                                 val targetFile = File(applicationContext.filesDir.absolutePath + "/" + contentId)
+                                 targetFile.renameTo(file)
+                             }
+                         } else {
+                             val textLength = requireNotNull(this.getInteger(Constants.integerWidth))
+                             text = requireNotNull(this.getString(textLength))
+                         }
+
+                         socialContent.add(Content(contentId = contentId,
+                                                   contentType = ContentType.getByValue(contentType)!!,
+                                                   contentOwner = memberId,
+                                                   text = text,
+                                                   slidanetId = slidanetViewId))
                          mainHandler?.post { networkMessageHandler.switchActivity(ActivityTracker.OwnLegacyContent) }
                      }
 
@@ -598,6 +610,10 @@ interface NetworkMessageHandler {
     fun initialize()
     fun switchActivity(tracker: ActivityTracker)
     fun refreshContent()
+}
+
+interface SlidanetCallbacks {
+    fun refreshSlidanetContent(index: Int)
 }
 
 fun createUUID() : String {

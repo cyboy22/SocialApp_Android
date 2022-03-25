@@ -52,9 +52,10 @@ class ComposeTextActivity : AppCompatActivity(),
 
     private fun doneButtonClicked() {
 
-        SocialApp.socialServer.addContentRequest(Content("",
-                                                 ContentType.Text, "",
-                                                 editText.text.toString(),""))
+        SocialApp.socialServer.addContentRequest(Content(contentId = "",
+                                                 contentType = ContentType.Text,
+                                                 contentOwner = "",
+                                                 text = editText.text.toString()))
     }
 
     private fun cancelButtonClicked() {

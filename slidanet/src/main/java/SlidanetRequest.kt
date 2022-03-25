@@ -1,9 +1,10 @@
 internal interface SlidanetRequest {
 
     fun authenticateConnection(requestId: Int,
-                               platformName: String,
-                               platformPassword: String,
-                               userId: String)
+                               applicationName: String,
+                               applicationPassword: String,
+                               slidaName: String)
     fun disconnectFromNetwork(requestId: Int)
-    fun disconnectAllViews(requestId: Int)
+    fun connectContent(requestId: Int, viewId: String)
+    fun disconnectAllContent(requestId: Int)
 }

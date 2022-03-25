@@ -1,19 +1,26 @@
 package com.example.socialapp
 
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class FollowingSlidanetContentActivity : AppCompatActivity(),
                                          NetworkMessageHandler,
+                                         SlidanetCallbacks,
                                          View.OnClickListener {
 
     private lateinit var unfollowButton: Button
     private lateinit var legacyButton: Button
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: FollowingSlidanetContentAdapter
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -25,6 +32,13 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_following_slidanet_content)
         SocialApp.networkMessageHandler = this
+        SocialApp.slidanetCallbacks = this
+
+        recyclerView = findViewById(R.id.slidanetOwnRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(applicationContext)
+        adapter = FollowingSlidanetContentAdapter()
+        recyclerView.adapter = adapter
+        adapter.notifyDataSetChanged()
     }
 
     override fun onResume() {
@@ -76,6 +90,7 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
     }
 
     override fun networkAlert(message: String) {
+
         alert(message)
     }
 
@@ -86,6 +101,10 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
     }
 
     override fun refreshContent() {
-        TODO("Not yet implemented")
+    }
+
+    override fun refreshSlidanetContent(index: Int) {
+
+        adapter.notifyItemChanged(index)
     }
 }

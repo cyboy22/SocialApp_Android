@@ -1,170 +1,62 @@
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.*
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.Process
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.webkit.MimeTypeMap
 import android.widget.TextView
-import com.example.slidanet.R
-import org.json.JSONArray
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import java.security.AccessController.getContext
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
+import java.nio.ShortBuffer
 import java.util.*
-
-
-internal object Constants {
-
-    internal const val networkMessageSizeLength: Int = 10
-    internal const val networkMessageTypeLength: Int = 5
-    internal const val networkMessageHeaderLength = networkMessageSizeLength + networkMessageTypeLength
-    const val floatWidth: Int = 10
-    const val integerWidth: Int = 10
-    const val shortWidth: Int = 5
-    const val nameWidth = 2
-    const val flagWidth = 1
-    const val uuidWidth = 32
-    const val defaultFontSize = 14.0F
-    const val defaultPixelWidth = 30
-    const val platformName = "platform_name"
-    const val platformId = "platform_id"
-    const val platformPassword = "platform_password"
-    const val userId = "user_id"
-    const val requestData = "request_data"
-    const val responseCode = "response_code"
-    const val responseData = "response_data"
-    const val ipAddressLiteral = "ip_address"
-    const val ipPortLiteral = "ip_port"
-    const val keystorePassword = "slidanet"
-    const val responseCodeLiteral = "response_code"
-    const val successLiteral = "success"
-    const val requestInfoLiteral = "request_info"
-    const val defaultSlideEditingScale = 3.0F
-    const val noRotation = 0
-}
-
-enum class SlidanetRequestType {
-    KConnectToNetwork,
-    KDisconnectFromNetwork,
-    KDisconnectAllViews
-}
-
-internal enum class ShaderType { DefaultShader
-}
-
-internal enum class ShareModeType { Slide,
-                                    Peek,
-                                    Pix }
-
-internal enum class SlideModeType { SlideNone,
-                                    SlideDefinition }
-
-internal enum class PeekModeType { PeekNone,
-                                   PeekDefinition,
-                                   PeekSlide }
-
-internal enum class PixModeType { PixNone,
-                                  PixDefinition,
-                                  PixSlide,
-                                  PixDynamic
-}
-
-internal enum class SlidanetMessageType { AuthenticateConnectionRequest,
-                                          AuthenticateConnectionResponse,
-                                          ConnectToViewRequest,
-                                          ConnectToViewResponse,
-                                          MoveRequest,
-                                          MoveResponse,
-                                          SetBoxRequest,
-                                          SetBoxResponse,
-                                          DisconnectFromViewRequest,
-                                          DisconnectFromViewResponse,
-                                          DisconnectAllViewsRequest,
-                                          DisconnectAllViewsResponse,
-                                          DisconnectRequest,
-                                          DisconnectResponse,
-                                          MaxValue }
-
-enum class SlidanetResponseType { KrequestSubmitted,
-                                  KplatformNameNotAlphanumeric,
-                                  KplatformIdNotAlphanumeric,
-                                  KPlatformIdLengthGreaterThan32,
-                                  KplatformPasswordNotAlphanumeric,
-                                  KPlatformPasswordLengthGreaterThan32,
-                                  KslidanetUserIdNotAlphanumeric,
-                                  KslidanetUserIdLengthGreaterThan32,
-                                  KBadContentURL,
-                                  KBadContentPath,
-                                  KInvalidIpAddressFormat,
-                                  KInvalidPortNumber,
-                                  KInternalErrorOccurred,
-                                  KConnectionAuthenticated,
-                                  KDisconnectedFromAllViews,
-                                  KDisconnected_,
-                                  KUndefined_}
-
-/*
-enum class ClientResponseType { Ok_,
-                                ConnectionAuthenticated_,
-                                InvalidPlatformPassword_,
-                                AuthenticationFailed_,
-                                CreatedUser_,
-                                CreatedView_,
-                                ConnectedToView_,
-                                ViewNotOnPlatform_,
-                                ViewNotFound_,
-                                ViewGiven_,
-                                ViewTaken_,
-                                VisibilityPreferenceSet_,
-                                ShareModeDefinitionSet_,
-                                MuteSet_,
-                                HideSet_,
-                                FreezeSet_,
-                                InternalError_,
-                                Undefined_}
-*/
-enum class SlidanetContentType { KImage, KVideo }
-
-enum class SlidanetFilterType { Default }
-
-enum class SlidanetViewParentType { KConstraintLayout,
-                                    KRelativeLayout,
-                                    KLinearLayout,
-                                    KFrameLayout }
 
 object Slidanet {
 
-    internal var requestId = 0
-    internal lateinit var userId: String
-    internal lateinit var platformName: String
-    private lateinit var platformId: String
-    internal lateinit var platformPassword: String
-    private lateinit var slidanetResponseHandler: SlidanetResponseHandler
     private val requests = mutableMapOf<Int, SlidanetResponseData>()
     private val slidanetViews = mutableMapOf<String, SlidanetObject>()
-    internal var server = SlidanetServer()
+    private val slidanetLayouts = mutableMapOf<String, ConstraintLayout>()
     private var serverReadThread = HandlerThread(createUUID(),
                                                  Process.THREAD_PRIORITY_BACKGROUND)
     private var serverWriteThread = HandlerThread(createUUID(),
                                                   Process.THREAD_PRIORITY_BACKGROUND)
     private var rendererThread = HandlerThread(createUUID(), Process.THREAD_PRIORITY_BACKGROUND)
-
-    private var mainHandler: Handler? = Handler(Looper.getMainLooper())
-    internal lateinit var applicationContext: Context
-    internal var sendMessageHandler: Handler
     private var receiveMessageHandler: Handler
-    private var rendererHandler: Handler
     private var connectedToSlidanet: Boolean = false
-    private lateinit var renderer: SlidanetRenderer
-    internal val locale: Locale = Locale.ENGLISH
     private var rendererInitialized = false
+    private val mime: MimeTypeMap = MimeTypeMap.getSingleton()
+    internal val locale: Locale = Locale.ENGLISH
+    internal var rendererHandler: Handler
+    internal var requestId = 0
+    internal var mainHandler: Handler? = Handler(Looper.getMainLooper())
+    internal var sendMessageHandler: Handler
+    internal var server = SlidanetServer()
+    internal lateinit var slidaName: String
+    internal lateinit var applicationName: String
+    internal lateinit var applicationPassword: String
+    private lateinit var slidanetResponseHandler: SlidanetResponseHandler
+    private lateinit var contentResolver: ContentResolver
+    internal lateinit var renderer: SlidanetRenderer
+    internal lateinit var applicationContext: Context
+    internal lateinit var editingContent: SlidanetObject
 
     init {
+
         serverReadThread.start()
         receiveMessageHandler = Handler(serverReadThread.looper)
         serverWriteThread.start()
@@ -174,170 +66,272 @@ object Slidanet {
     }
 
     fun isConnected() : Boolean {
+
         return connectedToSlidanet
     }
 
-    fun connectToNetwork(platformName: String,
-                         platformId: String,
-                         platformPassword: String,
-                         userId: String,
-                         ipAddress: String,
-                         ipPort: Int,
-                         appContext: Context,
-                         responseHandler: SlidanetResponseHandler) : SlidanetResponseType {
+    fun connect(ipAddress: String,
+                ipPort: Int,
+                applicationName: String,
+                applicationPassword: String,
+                appContext: Context,
+                slidaName: String,
+                responseHandler: SlidanetResponseHandler) : SlidanetResponseType {
 
         try {
 
-            val str = platformName.filter { !it.isWhitespace()}
-            if (!isLettersOrDigits(str)) return SlidanetResponseType.KplatformNameNotAlphanumeric
-            if (platformName.length > getFieldCapacity(Constants.nameWidth)) return SlidanetResponseType.KplatformNameNotAlphanumeric
-            if (!isLettersOrDigits(platformId)) return SlidanetResponseType.KplatformIdNotAlphanumeric
-            if (platformId.length > Constants.uuidWidth) return SlidanetResponseType.KPlatformIdLengthGreaterThan32
-            if (!isLettersOrDigits(platformPassword)) return SlidanetResponseType.KplatformPasswordNotAlphanumeric
-            if (platformPassword.length > Constants.uuidWidth) return SlidanetResponseType.KPlatformPasswordLengthGreaterThan32
-            if (!isLettersOrDigits(userId)) return SlidanetResponseType.KslidanetUserIdNotAlphanumeric
-            if (userId.length > Constants.uuidWidth) return SlidanetResponseType.KslidanetUserIdLengthGreaterThan32
-            if (!isValidIpAddress(ipAddress)) return SlidanetResponseType.KInvalidIpAddressFormat
-            if (!isValidPortNumber(ipPort)) return SlidanetResponseType.KInvalidPortNumber
+            if (isExistingRequest(SlidanetRequestType.Connect)) return SlidanetResponseType.OutstandingRequestExists
+            if (!isPureAscii(applicationName)) return SlidanetResponseType.ApplicationNameContainsNonASCIICharacters
+            if (applicationName.length > getFieldCapacity(Constants.nameWidth)) return SlidanetResponseType.ApplicationNameTooLong
+            if (!isPureAscii(applicationPassword)) return SlidanetResponseType.ApplicationPasswordContainsNonASCIICharacters
+            if (applicationPassword.length > Constants.uuidWidth) return SlidanetResponseType.ApplicationPasswordLengthGreaterThan32
+            if (applicationPassword.length > getFieldCapacity(Constants.nameWidth)) return SlidanetResponseType.ApplicationPasswordTooLong
+            if (!isLettersOrDigits(slidaName)) return SlidanetResponseType.SlidaNameContainsNonASCIICharacters
+            if (slidaName.length > Constants.uuidWidth) return SlidanetResponseType.SlidaNameTooLong
+            if (!isValidIpAddress(ipAddress)) return SlidanetResponseType.InvalidIpAddressFormat
+            if (!isValidPortNumber(ipPort)) return SlidanetResponseType.InvalidPortNumber
 
             applicationContext = appContext
+            contentResolver = applicationContext.contentResolver
+
             slidanetResponseHandler = responseHandler
-            this.platformName = platformName
-            this.platformId = platformId
-            this.platformPassword = platformPassword
-            this.userId = userId
+            this.applicationName = applicationName
+            this.applicationPassword = applicationPassword
+            this.slidaName = slidaName
 
             val request = JSONObject()
-            val requestArray = JSONArray()
-            val arrayDetails = JSONObject()
-            arrayDetails.put(Constants.platformName, platformName)
-            arrayDetails.put(Constants.platformId, platformId)
-            arrayDetails.put(Constants.platformPassword, platformPassword)
-            arrayDetails.put(Constants.userId, userId)
-            requestArray.put(arrayDetails)
-            request.put(Constants.requestInfoLiteral, requestArray)
+            request.put(SlidanetConstants.application_name, applicationName)
+            request.put(SlidanetConstants.application_password, applicationPassword)
+            request.put(SlidanetConstants.slida_name, slidaName)
+
             requestId++
-            requests[requestId] = SlidanetResponseData(SlidanetRequestType.KConnectToNetwork,
+            requests[requestId] = SlidanetResponseData(SlidanetRequestType.Connect,
                                                        request,
-                                                       SlidanetResponseType.KUndefined_)
+                                                       SlidanetResponseType.Undefined)
             if (!connectedToSlidanet) {
 
-                rendererHandler.post { renderer = SlidanetRenderer() }
-                receiveMessageHandler.post { server.connect(requestId,
-                                                            ipAddress,
-                                                            ipPort) }
+                if (!rendererInitialized) {
+                    rendererHandler.post { renderer = SlidanetRenderer() }
+                }
+                receiveMessageHandler.post { server.connect(requestId, ipAddress, ipPort) }
             }
         } catch (e: JSONException) {
-            return SlidanetResponseType.KInternalErrorOccurred
+            return SlidanetResponseType.InternalErrorOccurred
         }
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun connectNotification(requestId: Int) {
+    fun disconnect() : SlidanetResponseType {
 
-        connectedToSlidanet = true
-        requests[requestId]?.apply {
-            this.responseCode = SlidanetResponseType.KConnectionAuthenticated
-            slidanetResponseHandler.slidanetResponse(this)
-        }
-    }
-
-    fun disconnectFromNetwork() : SlidanetResponseType {
+        if (isExistingRequest(SlidanetRequestType.Disconnect)) return SlidanetResponseType.OutstandingRequestExists
 
         val request = JSONObject()
-        val requestArray = JSONArray()
-        val arrayDetails = JSONObject()
-        arrayDetails.put(Constants.userId, userId)
-        requestArray.put(arrayDetails)
-        request.put(Constants.requestInfoLiteral, requestArray)
+        request.put(SlidanetConstants.slida_name, slidaName)
+
         requestId++
-        requests[requestId] = SlidanetResponseData(SlidanetRequestType.KDisconnectFromNetwork,
+        requests[requestId] = SlidanetResponseData(SlidanetRequestType.Disconnect,
                                                    request,
-                                                   SlidanetResponseType.KUndefined_)
+                                                   SlidanetResponseType.Undefined)
 
         server.disconnectFromNetwork(requestId)
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun connectToView(viewId: String,
-                      contentType: SlidanetContentType = SlidanetContentType.KImage,
-                      contentPath: String = "",
-                      applicationContext: Context) :SlidanetResponseType {
+    fun connectContent(slidanetContentAddress: String,
+                       appContentPath: String = "",
+                       videoStartTime: Float = 0.0F,
+                       updateDuringEditing: Boolean = true) :SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        if (isConnected()) {
+
+            var contentType = SlidanetContentType.KImage
+
+            var objectWidth = 0
+            var objectHeight = 0
+
+            if (isExistingRequest(SlidanetRequestType.ConnectContent, slidanetContentAddress)) return SlidanetResponseType.OutstandingRequestExists
+
+            if (slidanetContentAddress.length != Constants.uuidWidth || !isLettersOrDigits(slidanetContentAddress)) {
+
+                return SlidanetResponseType.InvalidSlidanetContentAddress
+            }
+
+            if (videoStartTime < 0.0) {
+
+                return SlidanetResponseType.InvalidAppVideoStartTime
+            }
+
+            val file = File(appContentPath)
+
+            if (file.exists()) {
+
+                val uri = Uri.fromFile(file)
+
+                if (uri.scheme.equals(ContentResolver.SCHEME_CONTENT)) {
+
+                    mime.getMimeTypeFromExtension(contentResolver.getType(uri))?.let {
+
+                        if (Constants.supportImageFileTypes.contains(it)) {
+
+                            contentType = SlidanetContentType.KImage
+
+                        } else if (Constants.supportVideoFileTypes.contains(it)) {
+
+                            contentType = SlidanetContentType.KVideo
+
+                        } else {
+
+                            return SlidanetResponseType.UnsupportedContentType
+                        }
+                    }
+                }
+
+                when (contentType) {
+
+
+                    SlidanetContentType.KImage -> {
+
+                        BitmapFactory.decodeFile(uri.toString())?.let {
+
+                            objectWidth = it.width
+                            objectHeight = it.height
+
+                        } ?: kotlin.run {
+
+                            return SlidanetResponseType.UnableToDecodeAppContentFile
+                        }
+                    }
+
+                    SlidanetContentType.KVideo -> {
+
+                        val retriever = MediaMetadataRetriever()
+                        retriever.setDataSource(uri.path)
+
+                        retriever.getFrameAtTime(floatTimeToMicroseconds(videoStartTime), MediaMetadataRetriever.OPTION_CLOSEST)?.let {
+
+                            objectWidth = it.width
+                            objectHeight = it.height
+
+                        } ?: kotlin.run {
+
+                            return SlidanetResponseType.UnableToLoadInitialVideoFrame
+                        }
+                    }
+                }
+            } else {
+
+                return SlidanetResponseType.AppContentFileNotFound
+            }
+
+            val request = JSONObject()
+            request.put(SlidanetConstants.slida_name, slidaName)
+            request.put(SlidanetConstants.content_address, slidanetContentAddress)
+            request.put(SlidanetConstants.update_during_editing, updateDuringEditing.toInt())
+            request.put(SlidanetConstants.object_width, objectWidth)
+            request.put(SlidanetConstants.object_height, objectHeight)
+
+            when (contentType) {
+
+                SlidanetContentType.KImage -> request.put(Constants.contentTypeLiteral, 0)
+                SlidanetContentType.KVideo -> {
+                    request.put(Constants.contentTypeLiteral, 1)
+                    request.put(Constants.videoStartTimeLiteral, videoStartTime )
+                }
+            }
+
+            request.put(Constants.contentPathLiteral, appContentPath)
+
+            requestId++
+            requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.ConnectContent,
+                                                       requestInfo = request,
+                                                       responseCode =SlidanetResponseType.Undefined,
+                                                       applicationContext = applicationContext)
+
+            server.connectContent(requestId = requestId,
+                                  slidanetContentAddress = slidanetContentAddress)
+
+
+
+
+        } else {
+
+            return SlidanetResponseType.NotConnectedToSlidanet
+        }
+
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun disconnectFromView(slidanetViewId: String) : SlidanetResponseType {
+    fun disconnectContent(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        if (isExistingRequest(SlidanetRequestType.DisconnectContent)) return SlidanetResponseType.OutstandingRequestExists
+
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun disconnectAllViews() : SlidanetResponseType {
+    fun disconnectAllContent() : SlidanetResponseType {
+
+        if (isExistingRequest(SlidanetRequestType.DisconnectAllContent)) return SlidanetResponseType.OutstandingRequestExists
 
         val request = JSONObject()
-        val requestArray = JSONArray()
-        val arrayDetails = JSONObject()
-        arrayDetails.put(Constants.userId, userId)
-        requestArray.put(arrayDetails)
-        request.put(Constants.requestInfoLiteral, requestArray)
+        request.put(SlidanetConstants.slida_name, slidaName)
         requestId++
-        requests[requestId] = SlidanetResponseData(SlidanetRequestType.KDisconnectAllViews,
+        requests[requestId] = SlidanetResponseData(SlidanetRequestType.DisconnectAllContent,
             request,
-            SlidanetResponseType.KUndefined_)
+            SlidanetResponseType.Undefined)
 
-        server.disconnectAllViews(requestId)
+        server.disconnectAllContent(requestId)
 
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun editView(slidanetViewId: String,
-                 commitWhilstEditing: Boolean = false) : SlidanetResponseType {
+    fun editContent(slidanetContentAddress: String,
+                    commitWhilstEditing: Boolean = false) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun commitView(slidanetViewId: String) : SlidanetResponseType {
+    fun commitContent(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun requestMore(slidanetViewId: String) : SlidanetResponseType {
+    fun requestMoreContent(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun requestLess(slidanetViewId: String) : SlidanetResponseType {
+    fun requestLessContent(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun giveView(slidanetViewId: String) : SlidanetResponseType {
+    fun giveContent(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun takeView(slidanetViewId: String) : SlidanetResponseType {
+    fun takeContent(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun pauseAudio(slidanetViewId: String) : SlidanetResponseType {
+    fun pauseContentAudio(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun resumeAudio(slidanetViewId: String) : SlidanetResponseType {
+    fun resumeContentAudio(slidanetContentAddress: String) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
-    fun setFilter(slidanetViewId: String,
-                  filterType: SlidanetFilterType = SlidanetFilterType.Default) : SlidanetResponseType {
+    fun setContentFilter(slidanetContentAddress: String,
+                         filterType: SlidanetFilterType = SlidanetFilterType.Default) : SlidanetResponseType {
 
-        return SlidanetResponseType.KrequestSubmitted
+        return SlidanetResponseType.RequestSubmitted
     }
 
     internal fun processServerMessage(messageType: SlidanetMessageType, message: ByteArray) {
@@ -346,8 +340,10 @@ object Slidanet {
             when (messageType) {
 
                 SlidanetMessageType.AuthenticateConnectionResponse -> processAuthenticateMemberResponse(message)
+                SlidanetMessageType.ConnectContentResponse -> processConnectContentResponse(message)
+                SlidanetMessageType.UpdateContentContextResponse -> processUpdateContentContextResponse(message)
+                SlidanetMessageType.DisconnectAllContentResponse -> processDisconnectAllContentResponse(message)
                 SlidanetMessageType.DisconnectResponse -> processDisconnectResponse(message)
-                SlidanetMessageType.DisconnectAllViewsResponse -> processDisconnectAllViewsResponse(message)
 
                 else -> {}
             }
@@ -358,58 +354,372 @@ object Slidanet {
 
     private fun processAuthenticateMemberResponse(message: ByteArray) {
 
-        var responseCode = SlidanetResponseType.KUndefined_
+        try {
+            var responseCode: SlidanetResponseType
 
-        SlidanetMessage(message).apply {
-            requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
-                responseCode = SlidanetResponseType.values()[rc_it]
-            }
+            SlidanetMessage(message).apply {
 
-            if (responseCode == SlidanetResponseType.KConnectionAuthenticated) {
-                // start renderer
-            }
+                requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
 
-            val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
-            requests[requestId]?.apply {
-                this.responseCode = responseCode
-                mainHandler?.post { slidanetResponseHandler.slidanetResponse(this) }
+                    if (rc_it < 0 || rc_it >= SlidanetResponseType.MaxValue.ordinal) {
+
+                        handleInternalError()
+                    }
+
+                    responseCode = SlidanetResponseType.values()[rc_it]
+
+                    if (responseCode == SlidanetResponseType.ConnectionAuthenticated) {
+
+                        rendererHandler.post { renderer.setRenderingState(true) }
+                    }
+
+                    val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
+
+                    if (requestId < 0 || requestId >= requests.size) {
+
+                        handleInternalError()
+                    }
+                    requests[requestId]?.apply {
+
+                        this.responseCode = responseCode
+                        mainHandler?.post { slidanetResponseHandler.slidanetResponse(this) }
+                    }
+
+                    requests.remove(requestId)
+                }
             }
+        } catch (e: IllegalArgumentException) {
+
+            handleInternalError()
         }
     }
 
     private fun processDisconnectResponse(message: ByteArray) {
 
-        var responseCode = SlidanetResponseType.KUndefined_
+        try {
 
-        SlidanetMessage(message).apply {
-            requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
-                responseCode = SlidanetResponseType.values()[rc_it]
+            var responseCode: SlidanetResponseType
+
+            SlidanetMessage(message).apply {
+
+                requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
+                    if (rc_it >= 0 && rc_it < SlidanetResponseType.MaxValue.ordinal) {
+
+                        responseCode = SlidanetResponseType.values()[rc_it]
+                        val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
+
+                        if (requestId >= 0 && requestId < requests.size) {
+
+                            requests[requestId]?.apply {
+
+                                this.responseCode = responseCode
+                                mainHandler?.post { slidanetResponseHandler.slidanetResponse(this) }
+                            }
+
+                            requests.clear()
+                            removeSlidanetViews()
+                            connectedToSlidanet = false
+                            rendererHandler.post { renderer.setRenderingState(false) }
+
+                        }
+                    }
+                }
             }
-            val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
-            requests[requestId]?.apply {
-                this.responseCode = responseCode
-                mainHandler?.post { slidanetResponseHandler.slidanetResponse(this) }
-            }
+        } catch (e: IllegalArgumentException) {
+
+            handleInternalError()
         }
     }
 
-    private fun processDisconnectAllViewsResponse(message: ByteArray) {
+    private fun processConnectContentResponse(message:ByteArray) {
 
-        var responseCode = SlidanetResponseType.KUndefined_
+        try {
 
-        SlidanetMessage(message).apply {
-            requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
-                responseCode = SlidanetResponseType.values()[rc_it]
+            var responseCode: SlidanetResponseType
+
+            SlidanetMessage(message).let { msg ->
+
+                requireNotNull(msg.getInteger(Constants.shortWidth)).let { rc_it ->
+
+                    if (rc_it >= 0 && rc_it < SlidanetResponseType.MaxValue.ordinal) {
+
+                        responseCode = SlidanetResponseType.values()[rc_it]
+                        val requestId = requireNotNull(msg.getInteger(Constants.integerWidth))
+
+                        if (requestId < 0 || requestId >= requests.size) {
+
+                            handleInternalError()
+                        }
+
+                        requests[requestId]?.let { req ->
+
+                            req.responseCode = responseCode
+
+                            when (responseCode) {
+
+                                SlidanetResponseType.AppContentConnectedToSlidanetAddress -> {
+
+                                    req.requestInfo.getString(Constants.slidanetContentAddressLiteral).let { slidanetContentAddress ->
+
+                                        val contentAddressOwner = requireNotNull(msg.getString(Constants.uuidWidth))
+
+                                        if (contentAddressOwner == slidaName) {
+
+                                            val visibilityPreferenceCount = requireNotNull(msg.getInteger(Constants.integerWidth))
+
+                                            if (visibilityPreferenceCount > 0) {
+
+                                                val visibilityPreferences = mutableMapOf<String, Boolean>()
+
+                                                try {
+
+                                                    for (i in 0 until visibilityPreferenceCount-1) {
+
+                                                        val subscriber = requireNotNull(msg.getString(Constants.uuidWidth))
+                                                        val preference = requireNotNull(msg.getInteger(Constants.nameWidth)).bool
+                                                        visibilityPreferences[subscriber] = preference
+                                                    }
+
+                                                    slidanetViews[slidanetContentAddress]?.setVisibilityPreferences(visibilityPreferences)
+
+                                                } catch (e: JSONException) {
+
+                                                    handleInternalError()
+                                                }
+                                            }
+
+                                            val give = requireNotNull(msg.getInteger(Constants.flagWidth)).bool
+
+                                            if (give) {
+
+                                                val takersCount = requireNotNull(msg.getInteger(Constants.integerWidth))
+
+                                                val takers = mutableMapOf<String, String>()
+
+                                                try {
+
+                                                    for (i in 0 until takersCount-1) {
+
+                                                        val taker = requireNotNull(msg.getString(Constants.uuidWidth))
+                                                        val timestampLength = requireNotNull(msg.getInteger(Constants.nameWidth))
+                                                        val preference = requireNotNull(msg.getString(timestampLength))
+                                                        takers[taker] = preference
+                                                    }
+
+                                                    slidanetViews[slidanetContentAddress]?.setTakers(takers)
+
+                                                } catch (e: JSONException) {
+
+                                                    handleInternalError()
+                                                }
+                                            }
+                                        } else {
+
+                                            val viewTaken = requireNotNull(msg.getInteger(Constants.flagWidth)).bool
+
+                                            if (viewTaken) {
+
+                                                val shareMode = requireNotNull(msg.getInteger(Constants.nameWidth))
+
+                                                if (shareMode < 0 || shareMode >= ShareModeType.MaxValue.ordinal) {
+
+                                                    handleInternalError()
+                                                }
+
+                                                val takeTranslationX = requireNotNull(msg.getFloat())
+                                                val takeTranslationY = requireNotNull(msg.getFloat())
+                                                val takeTranslationZ = requireNotNull(msg.getFloat())
+                                                val takeBoxBeginX = requireNotNull(msg.getFloat())
+                                                val takeBoxBeginY= requireNotNull(msg.getFloat())
+                                                val takeBoxEndX = requireNotNull(msg.getFloat())
+                                                val takeBoxEndY = requireNotNull(msg.getFloat())
+
+                                                slidanetViews[slidanetContentAddress]?.let {
+
+                                                    rendererHandler.post { it.setShareTranslationParameters(takeTranslationX,
+                                                                                                            takeTranslationY,
+                                                                                                            takeTranslationZ)
+                                                    it.setShareBoxParameters(takeBoxBeginX,
+                                                                             takeBoxBeginY,
+                                                                             takeBoxEndX,
+                                                                             takeBoxEndY) }
+
+                                                }
+
+                                                val visibilityPreference = requireNotNull(msg.getInteger(Constants.nameWidth))
+                                                var pref = VisibilityPreferenceType.Neutral
+
+                                                when (visibilityPreference) {
+
+                                                    -1 -> pref = VisibilityPreferenceType.RequestLess
+                                                     0 -> pref = VisibilityPreferenceType.Neutral
+                                                     1 -> pref = VisibilityPreferenceType.RequestMore
+                                                }
+
+                                                slidanetViews[slidanetContentAddress]?.setVisibilityPreference(pref)
+
+                                            }
+                                        }
+
+                                        createSlidanetView(requestId)?.let { slidaView ->
+
+                                            slidanetViews[slidanetContentAddress] = slidaView
+                                            rendererHandler.post { renderer.addRenderingObject(slidanetContentAddress, slidaView) }
+                                            slidaView.id = View.generateViewId()
+                                            req.slidanetView = createClientLayout(slidaView, this.applicationContext)
+                                        }
+                                    }
+                                }
+
+                                else -> {
+
+                                }
+                            }
+
+                            mainHandler?.post { slidanetResponseHandler.slidanetResponse(req) }
+                        }
+
+                        requests.remove(requestId)
+
+                    } else {
+
+                        handleInternalError()
+                    }
+                }
             }
-            if (responseCode == SlidanetResponseType.KDisconnectedFromAllViews) {
-                slidanetViews.clear()
-                // all other cleanup
+
+        } catch (e: IllegalArgumentException) {
+
+            handleInternalError()
+        }
+    }
+
+    private fun processDisconnectAllContentResponse(message: ByteArray) {
+
+        try {
+
+            var responseCode: SlidanetResponseType
+
+            SlidanetMessage(message).apply {
+
+                requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
+                    if (rc_it < 0 || rc_it >= SlidanetResponseType.MaxValue.ordinal) {
+
+                        handleInternalError()
+                    }
+
+                    responseCode = SlidanetResponseType.values()[rc_it]
+
+                    if (responseCode == SlidanetResponseType.DisconnectedFromAllContent) {
+
+                        requests.clear()
+                        removeSlidanetViews()
+                    }
+
+                    val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
+
+                    if (requestId < 0 || requestId >= requests.size) {
+
+                        handleInternalError()
+                    }
+
+                    requests[requestId]?.apply {
+
+                        this.responseCode = responseCode
+                        mainHandler?.post { slidanetResponseHandler.slidanetResponse(this) }
+                    }
+
+                    requests.remove(requestId)
+                }
             }
-            val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
-            requests[requestId]?.apply {
-                this.responseCode = responseCode
-                mainHandler?.post { slidanetResponseHandler.slidanetResponse(this) }
+        } catch (e: IllegalArgumentException) {
+
+            handleInternalError()
+        }
+    }
+
+    private fun processUpdateContentContextResponse(message: ByteArray) {
+
+        try {
+
+            SlidanetMessage(message).apply {
+
+                val slidanetContentAddress = requireNotNull(this.getString(Constants.uuidWidth))
+
+                slidanetViews[slidanetContentAddress]?.let {
+
+                    val contentAddressOwner = requireNotNull(this.getString(Constants.uuidWidth))
+
+                    val giveEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+                    val hideEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+                    val muteEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+                    val freezeEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+
+                    val shareMode = requireNotNull(this.getInteger(Constants.nameWidth))
+                    if (shareMode < 0 || shareMode >= ShareModeType.MaxValue.ordinal) handleInternalError()
+                    val shareModeType = ShareModeType.values()[shareMode]
+
+                    val slideMode = requireNotNull(this.getInteger(Constants.nameWidth))
+                    if (slideMode < 0 || slideMode >= SlideModeType.MaxValue.ordinal) handleInternalError()
+                    val slideModeType = SlideModeType.values()[slideMode]
+
+                    val peekMode = requireNotNull(this.getInteger(Constants.nameWidth))
+                    if (peekMode < 0 || peekMode >= PeekModeType.MaxValue.ordinal) handleInternalError()
+                    val peekModeType = PeekModeType.values()[peekMode]
+
+                    val pixMode = requireNotNull(this.getInteger(Constants.nameWidth))
+                    if (pixMode < 0 || pixMode >= PixModeType.MaxValue.ordinal) handleInternalError()
+                    val pixModeType = PixModeType.values()[pixMode]
+
+                    val translationX = requireNotNull(this.getFloat())
+                    val translationY = requireNotNull(this.getFloat())
+                    val translationZ = requireNotNull(this.getFloat())
+
+                    val fadeBarrier = requireNotNull(this.getFloat())
+                    val snapThreshold = requireNotNull(this.getFloat())
+
+                    val boxBeginX = requireNotNull(this.getFloat())
+                    val boxBeginY = requireNotNull(this.getFloat())
+                    val boxEndX = requireNotNull(this.getFloat())
+                    val boxEndY = requireNotNull(this.getFloat())
+
+                    val pixPercentage = requireNotNull(this.getFloat())
+
+                    val shaderNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                    val shaderName = requireNotNull(this.getString(shaderNameLength))
+
+                    val slideEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+                    val peekEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+                    val pixEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
+
+                    rendererHandler.post {  it.setGiveEnabled(giveEnabled)
+                                            it.setHideEnabled(hideEnabled)
+                                            it.setMuteEnabled(muteEnabled)
+                                            it.setFreezeEnabled(freezeEnabled)
+                                            it.setShareMode(shareModeType)
+                                            it.setSlideMode(slideModeType)
+                                            it.setPeekMode(peekModeType)
+                                            it.setPixMode(pixModeType)
+                                            it.setShareTranslationParameters(translationX, translationY, translationZ)
+                                            it.setFadeBarrier(fadeBarrier)
+                                            it.setSnapThreshold(snapThreshold)
+                                            it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                            it.setPixPercentage(pixPercentage)
+                                            it.setShaderName(shaderName)
+                                            it.setSlideEnabled(slideEnabled)
+                                            it.setPeekEnabled(peekEnabled)
+                                            it.setPixEnabled(pixEnabled)
+
+                                            if (it.getTextureViewReady()) it.setDisplayNeedsUpdate(true)
+
+                    }
+                }
             }
+        } catch (e: IllegalArgumentException) {
+
+            handleInternalError()
         }
     }
 
@@ -442,11 +752,9 @@ object Slidanet {
         textView.draw(canvas)
 
         val flip = Matrix()
-        //flip.postScale(1f, -1f)
 
         val paintBg = Paint()
         paintBg.color = textBackgroundColor
-        //canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paintBg)
 
         return Bitmap.createBitmap(image,0,0,image.width, image.height, flip,true)
     }
@@ -461,6 +769,54 @@ object Slidanet {
         v.layout(v.left, v.top, v.right, v.bottom)
         v.draw(c)
         return b
+    }
+
+    private fun createClientLayout(slidanetView: SlidanetView, applicationContext: Context): ConstraintLayout {
+
+        val v = ConstraintLayout(applicationContext)
+        v.id = View.generateViewId()
+        val constraintLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                                                                   ConstraintLayout.LayoutParams.WRAP_CONTENT)
+        v.layoutParams = constraintLayoutParams
+        v.addView(slidanetView)
+        val constraintSet = ConstraintSet()
+        constraintSet.clone(v)
+        constraintSet.connect(slidanetView.id, ConstraintSet.TOP, v.id, ConstraintSet.TOP, 0)
+        constraintSet.connect(slidanetView.id, ConstraintSet.LEFT, v.id, ConstraintSet.LEFT, 0)
+        constraintSet.connect(slidanetView.id, ConstraintSet.BOTTOM, v.id, ConstraintSet.BOTTOM, 0)
+        constraintSet.connect(slidanetView.id, ConstraintSet.RIGHT, v.id, ConstraintSet.RIGHT, 0)
+        constraintSet.applyTo(v);
+
+        return v
+    }
+
+    private fun createSlidanetView(requestId: Int): SlidanetView? {
+
+        var slidanetView: SlidanetView? = null
+
+        requests[requestId]?.let {
+
+            val requestData: JSONObject = it.requestInfo
+            val slidanetContentAddress = requestData.getString(Constants.slidanetContentAddressLiteral)
+            val contentPath = requestData.getString(Constants.contentPathLiteral)
+
+            when (requestData.getInt(Constants.contentTypeLiteral)) {
+
+                0 -> slidanetView = SlidanetView(contentAddress = slidanetContentAddress,
+                                                 contentType = SlidanetContentType.KImage,
+                                                 contentPath = contentPath,
+                                                 applicationContext = it.applicationContext!!)
+                1 -> { val videoStartTime = requestData.getDouble(Constants.videoStartTimeLiteral)
+                       slidanetView = SlidanetView(contentAddress = slidanetContentAddress,
+                                                   contentType = SlidanetContentType.KVideo,
+                                                   contentPath = contentPath,
+                                                   videoStartTime = videoStartTime.toFloat(),
+                                                   applicationContext = it.applicationContext!!)
+                }
+            }
+        }
+
+        return slidanetView
     }
 
     internal fun getRawResource(resource: Int): String? {
@@ -482,8 +838,58 @@ object Slidanet {
         }
         return res
     }
-}
 
+    private fun handleInternalError() {
+
+        disconnect()
+    }
+
+    private fun removeSlidanetViews() {
+
+        for ((_, element) in slidanetViews) {
+            val e = element as SlidanetView
+            (e.parent as ViewGroup).removeView(e)
+        }
+
+        for ((_, element) in slidanetLayouts) {
+            (element.parent as ViewGroup).removeView(element)
+        }
+
+        slidanetLayouts.clear()
+        slidanetViews.clear()
+
+        rendererHandler.post { renderer.clearRenderingObjects()
+                               renderer.setRenderingState(false) }
+    }
+
+    private fun isExistingRequest(requestType: SlidanetRequestType, slidanetContentAddress: String = "") : Boolean {
+
+        var found = false
+
+        for ((_, element) in requests) {
+
+            if (element.requestCode == requestType && slidanetContentAddress == "") {
+                found = true
+                break
+            } else if (slidanetContentAddress.isNotEmpty()) {
+                val json = element.requestInfo
+                val vId = json.getString(Constants.slidanetContentAddressLiteral)
+                if (vId == slidanetContentAddress) {
+                    found = true
+                    break
+                }
+            }
+        }
+
+        return found
+    }
+
+    internal fun setRendererInitialized(state: Boolean) {
+
+        rendererInitialized = state
+    }
+}
+/*
 fun isLettersOrDigits(chars: String): Boolean {
     for (c in chars)
     {
@@ -543,6 +949,10 @@ fun isValidIpAddress(ip: String?): Boolean {
     }
 }
 
+fun intToBoolean(value: Int) : Boolean {
+    return value > 0
+}
+
 fun isValidPortNumber(port: Int) : Boolean {
 
     return port in 1..0xFFFF
@@ -557,3 +967,45 @@ internal fun booleanToInt(b: Boolean): Int {
 }
 
 internal fun Boolean.toInt() = if (this) 1 else 0
+
+internal fun floatTimeToMicroseconds(floatTime: Float) : Long {
+    return (floatTime * 1000000L).toLong()
+}
+
+val Int.bool:Boolean get() = this == 1
+
+internal fun getVideoFrame(atTime: Float, uri: Uri) : Bitmap? {
+
+    var bitmap: Bitmap? = null
+
+    try {
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(requireNotNull(uri.path))
+        bitmap = retriever.getFrameAtTime(floatTimeToMicroseconds(atTime), MediaMetadataRetriever.OPTION_CLOSEST)
+    } catch (e: IllegalArgumentException) {
+        return bitmap
+    } catch (e: SecurityException) {
+        return bitmap
+    }
+
+    return bitmap
+}
+
+internal fun createFloatBuffer(coords: FloatArray): FloatBuffer {
+    val bb = ByteBuffer.allocateDirect(coords.size * Constants.sizeOfFloat)
+    bb.order(ByteOrder.nativeOrder())
+    val fb = bb.asFloatBuffer()
+    fb.put(coords)
+    fb.position(0)
+    return fb
+}
+
+internal fun createShortBuffer(coords: ShortArray): ShortBuffer {
+    val bb = ByteBuffer.allocateDirect(coords.size * 4)
+    bb.order(ByteOrder.nativeOrder())
+    val sb = bb.asShortBuffer()
+    sb.put(coords)
+    sb.position(0)
+    return sb
+}
+*/

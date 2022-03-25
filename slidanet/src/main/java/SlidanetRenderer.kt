@@ -30,11 +30,13 @@ internal class SlidanetRenderer {
     private var eglDisplay: EGLDisplay? = EGL14.EGL_NO_DISPLAY
     private var eglContext = EGL14.EGL_NO_CONTEXT
     private lateinit var eglConfig: EGLConfig
-    private val shaders = mutableMapOf<ShaderType, Int>()
+    private val shaders = mutableMapOf<String, Int>()
     private lateinit var defaultSurface: EGLSurface
     private var positionHandle = 0
     private var textureCoordinatesHandle = 0
     private val slidaObjects = mutableMapOf<String, SlidanetObject>()
+    private var editorObject: SlidanetObject? = null
+    private var enableRendering = false
 
     init {
 
@@ -69,7 +71,12 @@ internal class SlidanetRenderer {
         initializeGLParameters()
         initializeShaders()
 
-        Choreographer.getInstance().postFrameCallback(frameCallback)
+        if (enableRendering) {
+            Choreographer.getInstance().postFrameCallback(frameCallback)
+        }
+
+        Slidanet.mainHandler?.post { Slidanet.setRendererInitialized(true) }
+
     }
 
     internal fun addRenderingObject(viewId: String, slidaView: SlidanetObject) {
@@ -80,17 +87,33 @@ internal class SlidanetRenderer {
         )
     }
 
+    internal fun removeRenderingObject(viewId: String) {
+
+        slidaObjects.remove(viewId)
+    }
+
+    fun clearSurface() {
+
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+    }
+
+    internal fun clearRenderingObjects() {
+
+        slidaObjects.clear()
+    }
+
     private fun initializeShader(shaderType: Int, source: String): Int {
 
         var shader = GLES20.glCreateShader(shaderType)
         checkGlError("glCreateShader type=$shaderType")
         GLES20.glShaderSource(shader, source)
-
         GLES20.glCompileShader(shader)
         checkGlError("glCompileShader type=$shaderType")
         val compiled = IntArray(1)
         GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compiled, 0)
+
         if (compiled[0] == 0) {
+
             Log.e(TAG, "Could not compile shader $shaderType:")
             val check = GLES20.glGetShaderInfoLog(shader)
             Log.e(TAG, " " + GLES20.glGetShaderInfoLog(shader))
@@ -98,6 +121,16 @@ internal class SlidanetRenderer {
             shader = 0
         }
         return shader
+    }
+
+    internal fun setRenderingState(state: Boolean) {
+
+        enableRendering = state
+
+        if (state) {
+
+            Choreographer.getInstance().postFrameCallback(frameCallback)
+        }
     }
 
     private fun createProgram(vertexSource: String, fragmentSource: String): Int {
@@ -140,7 +173,7 @@ internal class SlidanetRenderer {
         val defaultFragmentShader = getRawResource(R.raw.default_fragment_shader)
 
         val shaderProgram = createProgram(defaultVertexShader!!, defaultFragmentShader!!)
-        if (shaderProgram > 0) {  shaders += Pair(ShaderType.DefaultShader, shaderProgram) }
+        if (shaderProgram > 0) {  shaders += Pair("DefaultShader", shaderProgram) }
     }
 
     private fun createOffscreenSurface(): EGLSurface {
@@ -165,7 +198,7 @@ internal class SlidanetRenderer {
         makeCurrent(defaultSurface)
     }
 
-    private fun makeCurrent(eglSurface: android.opengl.EGLSurface) {
+    internal fun makeCurrent(eglSurface: android.opengl.EGLSurface) {
 
         if (eglDisplay === EGL14.EGL_NO_DISPLAY) {
             Log.d(TAG, "NOTE: makeCurrent w/o display")
@@ -191,17 +224,21 @@ internal class SlidanetRenderer {
 
         for (v in slidaObjects.entries) {
             val slidaView = v.value
-            if (slidaView.getDisplayNeedsUpdate()) {
-                if (slidaView.getTextureViewReady()) {
-                    slidaView.render()
-                }
-            }
+            if (slidaView.getDisplayNeedsUpdate())
+                if (slidaView.getTextureViewReady()) slidaView.render()
         }
 
-        Choreographer.getInstance().postFrameCallback(frameCallback)
+        editorObject?.let {
+            if (it.getDisplayNeedsUpdate())
+                if (it.getTextureViewReady()) it.render()
+        }
+
+        if (enableRendering) {
+            Choreographer.getInstance().postFrameCallback(frameCallback)
+        }
     }
 
-    private fun checkGlError(op: String) {
+    internal fun checkGlError(op: String) {
 
         val error = GLES20.glGetError()
         if (error != GLES20.GL_NO_ERROR) {
@@ -262,9 +299,15 @@ internal class SlidanetRenderer {
 
         val surfaceAttribs = intArrayOf(EGL14.EGL_NONE)
         return EGL14.eglCreateWindowSurface(eglDisplay,
-            eglConfig, surface,
-            surfaceAttribs,
-            0)
+                                            eglConfig,
+                                            surface,
+                                            surfaceAttribs,
+                                           0)
+    }
+
+    internal fun destroyWindowSurface(surface: EGLSurface): Boolean {
+
+        return EGL14.eglDestroySurface(eglDisplay, surface)
     }
 
     fun activateTexture(textureUnit: Int, textureId: Int) {
@@ -290,104 +333,110 @@ internal class SlidanetRenderer {
 
     fun loadShader(shaderContext: SlidanetShaderContext) {
 
-        val shader = shaders[shaderContext.shader]!!
+        shaders[shaderContext.shaderName]?.let {
 
-        GLES20.glUseProgram(shader)
-        checkGlError("glUseProgram")
+            GLES20.glUseProgram(it)
+            checkGlError("glUseProgram")
 
-        if (shaderContext.videoIsRunning) {
-            val textureTransformMatrixLocation = glGetUniformLocation(shader, "texture_transform")
-            GLES20.glUniformMatrix4fv(textureTransformMatrixLocation, 1, false, shaderContext.textureTransformMatrix, 0)
-        }
+            if (shaderContext.videoIsRunning) {
 
-        shaderContext.verticesBuffer.position(POSITION_OFFSET)
-        positionHandle = GLES20.glGetAttribLocation(shader, "a_position")
-        GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glVertexAttribPointer(positionHandle,
-            POSITION_COORDS_PER_VERTEX,
-            GLES20.GL_FLOAT,
-            false,
-            vertexStride,
-            shaderContext.verticesBuffer)
-
-        shaderContext.verticesBuffer.position(TEXCOORD_OFFSET)
-        textureCoordinatesHandle = GLES20.glGetAttribLocation(shader, "a_texcoord")
-        GLES20.glEnableVertexAttribArray(textureCoordinatesHandle)
-        GLES20.glVertexAttribPointer(textureCoordinatesHandle,
-            TEXTURE_COORDS_PER_VERTEX,
-            GLES20.GL_FLOAT,
-            false,
-            vertexStride,
-            shaderContext.verticesBuffer)
-
-        val videoRunningLocation = glGetUniformLocation(shader, "video_running")
-        glUniform1i(videoRunningLocation, shaderContext.videoIsRunning.toInt())
-
-        val peekItEnabledLocation = glGetUniformLocation(shader, "peek_active")
-        glUniform1i(peekItEnabledLocation, shaderContext.peekItEnabled.toInt())
-
-        val pixItEnabledLocation = glGetUniformLocation(shader, "pix_active")
-        glUniform1i(pixItEnabledLocation, shaderContext.pixItEnabled.toInt())
-
-        val textureWidthLocation = glGetUniformLocation(shader, "texture_width")
-        GLES20.glUniform1f(textureWidthLocation, shaderContext.textureWidth.toFloat())
-
-        val textureHeightLocation = glGetUniformLocation(shader, "texture_height")
-        GLES20.glUniform1f(textureHeightLocation, shaderContext.textureHeight.toFloat())
-
-        val alphaLocation = glGetUniformLocation(shader, "alpha")
-        GLES20.glUniform1f(alphaLocation, shaderContext.alpha)
-
-        val pixelWidthLocation = glGetUniformLocation(shader, "pixel_width")
-        GLES20.glUniform1f(pixelWidthLocation, shaderContext.pixelWidth.toFloat())
-
-        val pixelHeightLocation = glGetUniformLocation(shader, "pixel_height")
-        GLES20.glUniform1f(pixelHeightLocation, shaderContext.pixelHeight.toFloat())
-
-        val boxXBeginLocation = glGetUniformLocation(shader, "box_x_begin")
-        GLES20.glUniform1f(boxXBeginLocation, shaderContext.boxBeginX)
-
-        val boxYBeginLocation = glGetUniformLocation(shader, "box_y_begin")
-        GLES20.glUniform1f(boxYBeginLocation, shaderContext.boxBeginY)
-
-        val boxXEndLocation = glGetUniformLocation(shader, "box_x_end")
-        GLES20.glUniform1f(boxXEndLocation, shaderContext.boxEndX)
-
-        val boxYEndLocation = glGetUniformLocation(shader, "box_y_end")
-        GLES20.glUniform1f(boxYEndLocation, shaderContext.boxEndY)
-
-        val peekRedColorLocation = glGetUniformLocation(shader, "peek_it_mask_r_value")
-        GLES20.glUniform1f(peekRedColorLocation, shaderContext.maskRedValue)
-
-        val peekGreenColorLocation = glGetUniformLocation(shader, "peek_it_mask_g_value")
-        GLES20.glUniform1f(peekGreenColorLocation, shaderContext.maskGreenValue)
-
-        val peekBlueColorLocation = glGetUniformLocation(shader, "peek_it_mask_b_value")
-        GLES20.glUniform1f(peekBlueColorLocation, shaderContext.maskBlueValue)
-
-        val peekAlphaColorLocation = glGetUniformLocation(shader, "peek_it_mask_a_value")
-        GLES20.glUniform1f(peekAlphaColorLocation, shaderContext.maskAlphaValue)
-
-        val flipTextureLocation = glGetUniformLocation(shader, "flip_texture")
-        glUniform1i(flipTextureLocation, shaderContext.flipTexture.toInt())
-
-        var textureSamplerLocation = 0
-
-        when (shaderContext.viewType) {
-
-            SlidanetContentType.KImage -> {
-                textureSamplerLocation = glGetUniformLocation(shader, "s_texture")
+                val textureTransformMatrixLocation = glGetUniformLocation(it, "texture_transform")
+                GLES20.glUniformMatrix4fv(textureTransformMatrixLocation,
+                                          1,
+                                          false,
+                                          shaderContext.textureTransformMatrix, 0)
             }
 
-            SlidanetContentType.KVideo -> {
-                if (shaderContext.videoIsRunning) {
-                    textureSamplerLocation = glGetUniformLocation(shader, "external_texture")
-                } else {
-                    textureSamplerLocation = glGetUniformLocation(shader, "s_texture")
+            shaderContext.verticesBuffer.position(POSITION_OFFSET)
+            positionHandle = GLES20.glGetAttribLocation(it, "a_position")
+            GLES20.glEnableVertexAttribArray(positionHandle)
+            GLES20.glVertexAttribPointer(positionHandle,
+                                         POSITION_COORDS_PER_VERTEX,
+                                         GLES20.GL_FLOAT,
+                                        false,
+                                         vertexStride,
+                                         shaderContext.verticesBuffer)
+
+            shaderContext.verticesBuffer.position(TEXCOORD_OFFSET)
+            textureCoordinatesHandle = GLES20.glGetAttribLocation(it, "a_texcoord")
+            GLES20.glEnableVertexAttribArray(textureCoordinatesHandle)
+            GLES20.glVertexAttribPointer(textureCoordinatesHandle,
+                                         TEXTURE_COORDS_PER_VERTEX,
+                                         GLES20.GL_FLOAT,
+                                        false,
+                                         vertexStride,
+                                         shaderContext.verticesBuffer)
+
+            val videoRunningLocation = glGetUniformLocation(it, "video_running")
+            glUniform1i(videoRunningLocation, shaderContext.videoIsRunning.toInt())
+
+            val peekItEnabledLocation = glGetUniformLocation(it, "peek_active")
+            glUniform1i(peekItEnabledLocation, shaderContext.peekItEnabled.toInt())
+
+            val pixItEnabledLocation = glGetUniformLocation(it, "pix_active")
+            glUniform1i(pixItEnabledLocation, shaderContext.pixItEnabled.toInt())
+
+            val textureWidthLocation = glGetUniformLocation(it, "texture_width")
+            GLES20.glUniform1f(textureWidthLocation, shaderContext.textureWidth.toFloat())
+
+            val textureHeightLocation = glGetUniformLocation(it, "texture_height")
+            GLES20.glUniform1f(textureHeightLocation, shaderContext.textureHeight.toFloat())
+
+            val alphaLocation = glGetUniformLocation(it, "alpha")
+            GLES20.glUniform1f(alphaLocation, shaderContext.alpha)
+
+            val pixelWidthLocation = glGetUniformLocation(it, "pixel_width")
+            GLES20.glUniform1f(pixelWidthLocation, shaderContext.pixelWidth.toFloat())
+
+            val pixelHeightLocation = glGetUniformLocation(it, "pixel_height")
+            GLES20.glUniform1f(pixelHeightLocation, shaderContext.pixelHeight.toFloat())
+
+            val boxXBeginLocation = glGetUniformLocation(it, "box_x_begin")
+            GLES20.glUniform1f(boxXBeginLocation, shaderContext.boxBeginX)
+
+            val boxYBeginLocation = glGetUniformLocation(it, "box_y_begin")
+            GLES20.glUniform1f(boxYBeginLocation, shaderContext.boxBeginY)
+
+            val boxXEndLocation = glGetUniformLocation(it, "box_x_end")
+            GLES20.glUniform1f(boxXEndLocation, shaderContext.boxEndX)
+
+            val boxYEndLocation = glGetUniformLocation(it, "box_y_end")
+            GLES20.glUniform1f(boxYEndLocation, shaderContext.boxEndY)
+
+            val peekRedColorLocation = glGetUniformLocation(it, "peek_it_mask_r_value")
+            GLES20.glUniform1f(peekRedColorLocation, shaderContext.maskRedValue)
+
+            val peekGreenColorLocation = glGetUniformLocation(it, "peek_it_mask_g_value")
+            GLES20.glUniform1f(peekGreenColorLocation, shaderContext.maskGreenValue)
+
+            val peekBlueColorLocation = glGetUniformLocation(it, "peek_it_mask_b_value")
+            GLES20.glUniform1f(peekBlueColorLocation, shaderContext.maskBlueValue)
+
+            val peekAlphaColorLocation = glGetUniformLocation(it, "peek_it_mask_a_value")
+            GLES20.glUniform1f(peekAlphaColorLocation, shaderContext.maskAlphaValue)
+
+            val flipTextureLocation = glGetUniformLocation(it, "flip_texture")
+            glUniform1i(flipTextureLocation, shaderContext.flipTexture.toInt())
+
+            val textureSamplerLocation = when (shaderContext.viewType) {
+
+                SlidanetContentType.KImage -> {
+                    glGetUniformLocation(it, "s_texture")
+                }
+
+                SlidanetContentType.KVideo -> {
+
+                    if (shaderContext.videoIsRunning) {
+                        glGetUniformLocation(it, "external_texture")
+                    } else {
+                        glGetUniformLocation(it, "s_texture")
+                    }
                 }
             }
-        }
 
-        glUniform1i(textureSamplerLocation, 0)
+            glUniform1i(textureSamplerLocation, 0)
+        } ?: kotlin.run {
+
+        }
     }
 }

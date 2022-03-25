@@ -74,9 +74,9 @@ internal class SlidanetServer(): SlidanetRequest {
         connected = true
 
         authenticateConnection(Slidanet.requestId,
-                               Slidanet.platformName,
-                               Slidanet.platformPassword,
-                               Slidanet.userId)
+                               Slidanet.applicationName,
+                               Slidanet.applicationPassword,
+                               Slidanet.slidaName)
     }
 
     @Throws(UnknownHostException::class,
@@ -114,17 +114,20 @@ internal class SlidanetServer(): SlidanetRequest {
     }
 
     override fun authenticateConnection(requestId: Int,
-                                        platformName: String,
-                                        platformPassword: String,
-                                        userId: String
-                                        ) {
+                                        applicationName: String,
+                                        applicationPassword: String,
+                                        slidaName: String) {
 
         SlidanetMessage(SlidanetMessageType.AuthenticateConnectionRequest).apply {
+
             putInteger(Constants.integerWidth, requestId)
-            putInteger(Constants.nameWidth, platformName.length)
-            putString(platformName)
-            putString(platformPassword)
-            putString(userId)
+            putInteger(Constants.nameWidth, applicationName.length)
+            putString(applicationName)
+            putInteger(Constants.nameWidth, applicationPassword.length)
+            putString(applicationPassword)
+            putInteger(Constants.nameWidth, slidaName.length)
+            putString(slidaName)
+
         }.send()
     }
 
@@ -135,9 +138,17 @@ internal class SlidanetServer(): SlidanetRequest {
         }.send()
     }
 
-    override fun disconnectAllViews(requestId: Int) {
+    override fun connectContent(requestId: Int, slidanetContentAddress: String) {
 
-        SlidanetMessage(SlidanetMessageType.DisconnectAllViewsRequest).apply {
+        SlidanetMessage(SlidanetMessageType.ConnectContentRequest).apply {
+            putInteger(Constants.integerWidth, requestId)
+            putString(slidanetContentAddress)
+        }.send()
+    }
+
+    override fun disconnectAllContent(requestId: Int) {
+
+        SlidanetMessage(SlidanetMessageType.DisconnectAllContentRequest).apply {
             putInteger(Constants.integerWidth, requestId)
         }.send()
     }

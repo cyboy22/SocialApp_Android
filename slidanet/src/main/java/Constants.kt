@@ -55,4 +55,5 @@ internal object Constants {
     const val rotateRight = 270
     val supportImageFileTypes = arrayOf("jpeg", "png")
     val supportVideoFileTypes = arrayOf("mp4", "wav")
+
 }

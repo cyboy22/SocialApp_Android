@@ -114,9 +114,9 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
         if (!Slidanet.isConnected()) {
 
-            val response = Slidanet.connect(applicationName = SocialApp.slidanetPlatformName,
-                                            applicationPassword = SocialApp.slidanetPlatformPassword,
-                                            slidaName = SocialApp.slidanetId,
+            val response = Slidanet.connect(applicationName = SocialApp.slidanetApplicationName,
+                                            applicationPassword = SocialApp.slidanetApplicationPassword,
+                                            slidaName = SocialApp.slidanetName,
                                             ipAddress = SocialApp.slidanetServiceIpAddress,
                                             ipPort = SocialApp.slidanetServiceIpPort,
                                             appContext = SocialApp.applicationContext,

@@ -58,6 +58,7 @@ internal class SlidanetRenderer {
         checkGlError("eglInitialize")
 
         if (eglContext === EGL14.EGL_NO_CONTEXT) {
+
             val config = getConfig() ?: throw RuntimeException("Unable to find a suitable EGLConfig")
             val attrib2_list = intArrayOf(EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE)
 
@@ -136,6 +137,7 @@ internal class SlidanetRenderer {
     private fun createProgram(vertexSource: String, fragmentSource: String): Int {
 
         val vertexShader = initializeShader(GLES20.GL_VERTEX_SHADER, vertexSource)
+
         if (vertexShader == 0) {
             return 0
         }
@@ -418,23 +420,28 @@ internal class SlidanetRenderer {
             val flipTextureLocation = glGetUniformLocation(it, "flip_texture")
             glUniform1i(flipTextureLocation, shaderContext.flipTexture.toInt())
 
-            val textureSamplerLocation = when (shaderContext.viewType) {
+            var textureSamplerLocation = 0
 
-                SlidanetContentType.KImage -> {
-                    glGetUniformLocation(it, "s_texture")
+            when (shaderContext.viewType) {
+
+                SlidanetContentType.Image -> {
+                    textureSamplerLocation = glGetUniformLocation(it, "s_texture")
                 }
 
-                SlidanetContentType.KVideo -> {
+                SlidanetContentType.Video -> {
 
                     if (shaderContext.videoIsRunning) {
-                        glGetUniformLocation(it, "external_texture")
+                        textureSamplerLocation = glGetUniformLocation(it, "external_texture")
                     } else {
-                        glGetUniformLocation(it, "s_texture")
+                        textureSamplerLocation = glGetUniformLocation(it, "s_texture")
                     }
                 }
+
+                else -> {}
             }
 
             glUniform1i(textureSamplerLocation, 0)
+
         } ?: kotlin.run {
 
         }

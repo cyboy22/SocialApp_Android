@@ -3,7 +3,7 @@ import java.nio.FloatBuffer
 internal data class SlidanetShaderContext(val shaderName: String = "DefaultShader",
                                           val peekItEnabled: Boolean = false,
                                           val pixItEnabled: Boolean = false,
-                                          val viewType: SlidanetContentType = SlidanetContentType.KImage,
+                                          val viewType: SlidanetContentType = SlidanetContentType.Image,
                                           val pixelWidth: Int = Constants.defaultPixelWidth,
                                           val pixelHeight: Int = Constants.defaultPixelWidth,
                                           val boxBeginX: Float = 0.0f,

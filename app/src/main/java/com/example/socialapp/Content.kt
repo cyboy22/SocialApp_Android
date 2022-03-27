@@ -6,4 +6,4 @@ data class Content(val contentId: String,
                    val text: String,
                    var objectWidth: Int = 0,
                    var objectHeight: Int = 0,
-                   val slidanetId: String = "")
+                   val slidanetContentAddress: String = "")

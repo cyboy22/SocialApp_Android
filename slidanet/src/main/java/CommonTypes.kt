@@ -3,72 +3,71 @@ enum class SlidanetRequestType { Connect,
                                  DisconnectContent,
                                  DisconnectAllContent,
                                  Disconnect,
-                                 None
-}
+                                 MaxValue }
 
-internal enum class ShaderType { DefaultShader
-}
+internal enum class ShaderType { DefaultShader }
 
 internal enum class ShareModeType { Slide,
-    Peek,
-    Pix,
-    MaxValue}
+                                    Peek,
+                                    Pix,
+                                    MaxValue }
 
 internal enum class SlideModeType { SlideNone,
-    SlideDefinition,
-    MaxValue }
+                                    SlideDefinition,
+                                    MaxValue }
 
 internal enum class PeekModeType { PeekNone,
-    PeekDefinition,
-    PeekSlide,
-    MaxValue}
+                                   PeekDefinition,
+                                   PeekSlide,
+                                   MaxValue }
 
 internal enum class PixModeType { PixNone,
-    PixDefinition,
-    PixSlide,
-    PixDynamic,
-    MaxValue }
+                                  PixDefinition,
+                                  PixSlide,
+                                  PixDynamic,
+                                  MaxValue }
 
 internal enum class VisibilityPreferenceType { RequestLess,
-    Neutral,
-    RequestMore}
+                                               Neutral,
+                                               RequestMore }
 
 internal enum class SlidanetMessageType { AuthenticateConnectionRequest,
                                           AuthenticateConnectionResponse,
-    ConnectContentRequest,
-    ConnectContentResponse,
-    UpdateContentContextResponse,
-    MoveContentRequest,
-    MoveContentResponse,
-    SetContentVisibilityPreferenceRequest,
-    SetContentVisibilityPreferenceResponse,
-    GiveContentRequest,
-    GiveContentResponse,
-    TakeContentRequest,
-    TakeContentResponse,
-    MoreContentRequest,
-    MoreContentResponse,
-    LessContentRequest,
-    LessContentResponse,
-    SetContentShareModeRequest,
-    SetContentShareModeResponse,
-    SetContentFilterRequest,
-    SetContentFilterResponse,
-    DisconnectContentRequest,
-    DisconnectContentResponse,
-    DisconnectAllContentRequest,
-    DisconnectAllContentResponse,
-    TakeNotificationRequest,
-    VisibilityNotificationRequest,
-    SetMuteContentRequest,
-    SetMuteContentResponse,
-    SetHideContentRequest,
-    SetHideContentResponse,
-    SetFreezeContentRequest,
-    SetFreezeContentResponse,
-    DisconnectRequest,
-    DisconnectResponse,
-    MaxValue }
+                                          ConnectContentRequest,
+                                          ConnectContentResponse,
+                                          UpdateContentContextResponse,
+                                          MoveContentRequest,
+                                          MoveContentResponse,
+                                          SetContentVisibilityPreferenceRequest,
+                                          SetContentVisibilityPreferenceResponse,
+                                          GiveContentRequest,
+                                          GiveContentResponse,
+                                          TakeContentRequest,
+                                          TakeContentResponse,
+                                          MoreContentRequest,
+                                          MoreContentResponse,
+                                          LessContentRequest,
+                                          LessContentResponse,
+                                          SetContentShareModeRequest,
+                                          SetContentShareModeResponse,
+                                          SetContentFilterRequest,
+                                          SetContentFilterResponse,
+                                          DisconnectContentRequest,
+                                          DisconnectContentResponse,
+                                          DisconnectAllContentRequest,
+                                          DisconnectAllContentResponse,
+                                          TakeNotificationRequest,
+                                          VisibilityNotificationRequest,
+                                          SetMuteContentRequest,
+                                          SetMuteContentResponse,
+                                          SetHideContentRequest,
+                                          SetHideContentResponse,
+                                          SetFreezeContentRequest,
+                                          SetFreezeContentResponse,
+                                          DisconnectRequest,
+                                          DisconnectResponse,
+                                          ViewerJoinedNotificationRequest,
+                                          MaxValue }
 
 enum class SlidanetResponseType { Ok,
                                   Undefined,
@@ -118,6 +117,8 @@ enum class SlidanetResponseType { Ok,
                                   MaxValue }
 
 
-enum class SlidanetContentType { KImage, KVideo }
+enum class SlidanetContentType { Image,
+                                 Video,
+                                 MaxValue }
 
 enum class SlidanetFilterType { Default }

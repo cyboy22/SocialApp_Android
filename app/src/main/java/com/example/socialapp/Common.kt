@@ -84,14 +84,17 @@ enum class ClientResponseType { Ok,
 
 object Constants {
 
+
+    const val slidanetName: String = "SLIDANET_NAME"
     const val slidanetId: String = "SLIDANET_ID"
     const val memberId: String = "MEMBER_ID"
     const val memberName: String = "MEMBER_NAME"
     const val followingName: String = "FOLLOWING_NAME"
     const val slidanetModeActive = "SLIDANET_MODE_ACTIVE"
     const val slidanetPlatformName: String = "SLIDANET_PLATFORM_NAME"
-    const val slidanetPlatformId: String = "SLIDANET_PLATFORM_ID"
+    const val slidanetApplicationName: String = "SLIDANET_APPLICATION_NAME"
     const val slidanetPlatformPassword: String = "SLIDANET_PLATFORM_PASSWORD"
+    const val slidanetApplicationPassword: String = "SLIDANET_APPLICATION_PASSWORD"
     const val networkMessageSizeLength: Int = 10
     const val networkMessageTypeLength: Int = 5
     const val serverIpAddress: String = "192.168.0.7"
@@ -128,15 +131,12 @@ object Constants {
      var density: Float = 0.0F
      lateinit var applicationContext: Context
      var activityTracker: ActivityTracker = ActivityTracker.Register
-     lateinit var slidanetId: String
-     lateinit var slidanetIpAddress: String
-     var slidanetIpPort: Int = 0
+     lateinit var slidanetName: String
      var memberId = ""
      var memberName = ""
      private var followingName = ""
-     lateinit var slidanetPlatformName: String
-     lateinit var slidanetPlatformId: String
-     lateinit var slidanetPlatformPassword: String
+     lateinit var slidanetApplicationName: String
+     lateinit var slidanetApplicationPassword: String
      var slidanetServiceIpAddress = ""
      var slidanetServiceIpPort: Int = 0
      lateinit var socialServer: SocialServer
@@ -171,13 +171,13 @@ object Constants {
      fun loadContextData() {
 
         sharedPreferences.let {
-            slidanetId = it.getString(Constants.slidanetId, "").toString()
+
+            slidanetName = it.getString(Constants.slidanetId, "").toString()
             memberId = it.getString(Constants.memberId, "").toString()
             memberName = it.getString(Constants.memberName, "").toString()
             followingName = it.getString(Constants.followingName, "").toString()
-            slidanetPlatformName = it.getString(Constants.slidanetPlatformName, "").toString()
-            slidanetPlatformId = it.getString(Constants.slidanetPlatformId, "").toString()
-            slidanetPlatformPassword = it.getString(Constants.slidanetPlatformPassword, "").toString()
+            slidanetApplicationName = it.getString(Constants.slidanetPlatformName, "").toString()
+            slidanetApplicationPassword = it.getString(Constants.slidanetPlatformPassword, "").toString()
             slidanetModeActive = it.getBoolean(Constants.slidanetModeActive, false)
         }
 
@@ -295,21 +295,20 @@ object Constants {
 
                 ClientResponseType.Ok -> {
                     memberId = requireNotNull(this.getString(Constants.uuidWidth))
-                    val platformNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
-                    slidanetPlatformName = requireNotNull(this.getString(platformNameLength))
-                    slidanetPlatformId = requireNotNull(this.getString(Constants.uuidWidth))
-                    slidanetPlatformPassword = requireNotNull(this.getString(Constants.uuidWidth))
+                    val applicationNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                    slidanetApplicationName = requireNotNull(this.getString(applicationNameLength))
+                    val applicationPasswordLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                    slidanetApplicationPassword = requireNotNull(this.getString(applicationPasswordLength))
                     val memberNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
                     memberName = requireNotNull(this.getString(memberNameLength))
-                    slidanetId = requireNotNull(this.getString(Constants.uuidWidth))
+                    slidanetName = requireNotNull(this.getString(Constants.uuidWidth))
 
                     sharedPreferences.edit()?.let {
                         it.putString(Constants.memberId, memberId)
-                        it.putString(Constants.slidanetPlatformName, slidanetPlatformName)
-                        it.putString(Constants.slidanetPlatformId, slidanetPlatformId)
-                        it.putString(Constants.slidanetPlatformPassword, slidanetPlatformPassword)
+                        it.putString(Constants.slidanetApplicationName, slidanetApplicationName)
+                        it.putString(Constants.slidanetApplicationPassword, slidanetApplicationPassword)
                         it.putString(Constants.memberName, memberName)
-                        it.putString(Constants.slidanetId, slidanetId)
+                        it.putString(Constants.slidanetName, slidanetName)
                         it.commit()
                     }
 
@@ -383,22 +382,22 @@ object Constants {
                          val memberNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
                          memberName = requireNotNull(this.getString(memberNameLength))
                          memberId = requireNotNull(this.getString(Constants.uuidWidth))
-                         slidanetId = requireNotNull(this.getString(Constants.uuidWidth))
-                         val platformNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
-                         slidanetPlatformName = requireNotNull(this.getString(platformNameLength))
-                         slidanetPlatformId = requireNotNull(this.getString(Constants.uuidWidth))
-                         slidanetPlatformPassword = requireNotNull(this.getString(Constants.uuidWidth))
+                         val slidaNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                         slidanetName = requireNotNull(this.getString(slidaNameLength))
+                         val applicationNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                         slidanetApplicationName = requireNotNull(this.getString(applicationNameLength))
+                         val appilcationPasswordLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                         slidanetApplicationPassword = requireNotNull(this.getString(appilcationPasswordLength))
                          val slidanetServiceIpAddressLength = requireNotNull(this.getInteger(Constants.nameWidth))
                          slidanetServiceIpAddress = requireNotNull(this.getString(slidanetServiceIpAddressLength))
                          slidanetServiceIpPort = requireNotNull(this.getInteger(Constants.integerWidth))
 
                          sharedPreferences.edit()?.let {
                              it.putString(Constants.memberId, memberId)
-                             it.putString(Constants.slidanetPlatformName, slidanetPlatformName)
-                             it.putString(Constants.slidanetPlatformId, slidanetPlatformId)
-                             it.putString(Constants.slidanetPlatformPassword, slidanetPlatformPassword)
+                             it.putString(Constants.slidanetApplicationName, slidanetApplicationName)
+                             it.putString(Constants.slidanetApplicationPassword, slidanetApplicationPassword)
                              it.putString(Constants.memberName, memberName)
-                             it.putString(Constants.slidanetId, slidanetId)
+                             it.putString(Constants.slidanetName, slidanetName)
                              it.commit()
                          }
 
@@ -451,8 +450,8 @@ object Constants {
                              }
                              val contentOwnerLength = requireNotNull(this.getInteger(Constants.nameWidth))
                              val contentOwner = requireNotNull(this.getString(contentOwnerLength))
-                             val slidanetViewIdLength = requireNotNull(this.getInteger(Constants.nameWidth))
-                             val slidanetViewId = requireNotNull(this.getString(slidanetViewIdLength))
+                             val slidanetContentAddressLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                             val slidanetContentAddress = requireNotNull(this.getString(slidanetContentAddressLength))
                              val textLength = requireNotNull(this.getInteger(Constants.integerWidth))
                              var text = ""
 
@@ -485,7 +484,7 @@ object Constants {
                                                        contentType =  ContentType.getByValue(contentType)!!,
                                                        contentOwner = contentOwner,
                                                        text = text,
-                                                       slidanetId = slidanetViewId))
+                                                       slidanetContentAddress = slidanetContentAddress))
                          }
 
                          listingsDownloadComplete = true
@@ -557,7 +556,8 @@ object Constants {
                          var text: String = ""
                          val contentType = requireNotNull(this.getInteger(Constants.nameWidth))
                          val contentId = requireNotNull(this.getString(Constants.uuidWidth))
-                         val slidanetViewId = requireNotNull(this.getString(Constants.uuidWidth))
+                         val slidanetContentAddressLength = requireNotNull(this.getInteger(Constants.nameWidth))
+                         val slidanetContentAddress = requireNotNull(this.getString(slidanetContentAddressLength))
 
                          if (ContentType.getByValue(contentType) != ContentType.Text) {
                              val contextId = requireNotNull(this.getString(Constants.uuidWidth))
@@ -576,7 +576,7 @@ object Constants {
                                                    contentType = ContentType.getByValue(contentType)!!,
                                                    contentOwner = memberId,
                                                    text = text,
-                                                   slidanetId = slidanetViewId))
+                                                   slidanetContentAddress = slidanetContentAddress))
                          mainHandler?.post { networkMessageHandler.switchActivity(ActivityTracker.OwnLegacyContent) }
                      }
 

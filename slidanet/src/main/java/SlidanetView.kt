@@ -16,7 +16,7 @@ import java.nio.ShortBuffer
 import java.util.*
 
 internal class SlidanetView (private val contentAddress: String,
-                             private val contentType: SlidanetContentType = SlidanetContentType.KImage,
+                             private val contentType: SlidanetContentType = SlidanetContentType.Image,
                              private val contentPath: String = "",
                              private var videoStartTime: Float = 0.0F,
                              private val applicationContext: Context) : TextureView(applicationContext),
@@ -109,8 +109,8 @@ internal class SlidanetView (private val contentAddress: String,
 
         when (contentType) {
 
-            SlidanetContentType.KImage -> initializeImage()
-            SlidanetContentType.KVideo -> initializeVideo()
+            SlidanetContentType.Image -> initializeImage()
+            SlidanetContentType.Video -> initializeVideo()
         }
 
         initializeTexture()
@@ -222,7 +222,7 @@ internal class SlidanetView (private val contentAddress: String,
 
         this.initializeVertices(normalizedTranslationX, normalizedTranslationY)
 
-        if (contentType == SlidanetContentType.KVideo) {
+        if (contentType == SlidanetContentType.Video) {
 
             val videoSurfaceTextureHandle = intArrayOf(1)
             GLES20.glGenTextures(videoSurfaceTextureHandle.size, videoSurfaceTextureHandle, 0)
@@ -350,7 +350,7 @@ internal class SlidanetView (private val contentAddress: String,
 
         GLES20.glDeleteTextures(1, textureHandles,0)
 
-        if (contentType  == SlidanetContentType.KVideo) {
+        if (contentType  == SlidanetContentType.Video) {
 
             val videoTextureHandles = intArrayOf(1)
             videoTextureHandles[0] = videoSurfaceTextureId
@@ -412,7 +412,7 @@ internal class SlidanetView (private val contentAddress: String,
                 }
             */
 
-            if (contentType == SlidanetContentType.KVideo) {
+            if (contentType == SlidanetContentType.Video) {
                 /*
                 if (!textureView.getVideoIsRunning()) {
                         activateTexture(GLES20.GL_TEXTURE_2D, textureView.getTextureId())

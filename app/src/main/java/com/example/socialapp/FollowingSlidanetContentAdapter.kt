@@ -25,7 +25,7 @@ class FollowingSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewH
 
             textView.text = content.text
             textView.id = View.generateViewId()
-            slidanetView = SocialApp.slidanetViews[content.slidanetId]!!
+            slidanetView = SocialApp.slidanetViews[content.slidanetContentAddress]!!
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
@@ -56,7 +56,7 @@ class FollowingSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewH
 
         fun bind(content: Content) {
 
-            slidanetView = SocialApp.slidanetViews[content.slidanetId]!!
+            slidanetView = SocialApp.slidanetViews[content.slidanetContentAddress]!!
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
@@ -101,7 +101,7 @@ class FollowingSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewH
 
         val content = SocialApp.socialContent[position]
 
-        SocialApp.slidanetViews[content.slidanetId]?.let {
+        SocialApp.slidanetViews[content.slidanetContentAddress]?.let {
 
             when (getItemViewType(position)) {
 
@@ -114,7 +114,7 @@ class FollowingSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewH
             val path = File(ContextWrapper(SocialApp.applicationContext).getDir(Constants.contentDirectory,
                                            Context.MODE_PRIVATE), content.contentId).absolutePath
 
-            when (Slidanet.connectContent(slidanetContentAddress = content.slidanetId,
+            when (Slidanet.connectContent(slidanetContentAddress = content.slidanetContentAddress,
                                           appContentPath = path)) {
 
                 SlidanetResponseType.RequestSubmitted -> {
@@ -136,13 +136,13 @@ class FollowingSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewH
 
     private fun convertToSlidanetContentType(contentType: ContentType) : SlidanetContentType {
 
-        val cType = SlidanetContentType.KImage
+        val cType = SlidanetContentType.Image
 
         when (contentType) {
 
-            ContentType.Image -> SlidanetContentType.KImage
-            ContentType.Video -> SlidanetContentType.KVideo
-            ContentType.Text -> SlidanetContentType.KImage
+            ContentType.Image -> SlidanetContentType.Image
+            ContentType.Video -> SlidanetContentType.Video
+            ContentType.Text -> SlidanetContentType.Image
         }
 
         return cType

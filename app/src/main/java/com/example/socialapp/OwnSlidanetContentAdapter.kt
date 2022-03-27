@@ -25,7 +25,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             textView.text = content.text
             textView.id = View.generateViewId()
-            slidanetView = SocialApp.slidanetViews[content.slidanetId]!!
+            slidanetView = SocialApp.slidanetViews[content.slidanetContentAddress]!!
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
@@ -56,7 +56,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         fun bind(content: Content) {
 
-            slidanetView = SocialApp.slidanetViews[content.slidanetId]!!
+            slidanetView = SocialApp.slidanetViews[content.slidanetContentAddress]!!
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
@@ -101,7 +101,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
         val content = SocialApp.socialContent[position]
 
-        SocialApp.slidanetViews[content.slidanetId]?.let {
+        SocialApp.slidanetViews[content.slidanetContentAddress]?.let {
 
             when (getItemViewType(position)) {
 
@@ -110,11 +110,11 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
                 ContentType.Text.ordinal -> (holder as TextViewHolder).bind(content)
             }
         } ?: kotlin.run {
-
+            /*
             val path = File(ContextWrapper(SocialApp.applicationContext).getDir(Constants.contentDirectory,
                                                                                 Context.MODE_PRIVATE), content.contentId).absolutePath
 
-            when (Slidanet.connectContent(slidanetContentAddress = content.slidanetId,
+            when (Slidanet.connectContent(slidanetContentAddress = content.slidanetContentAddress,
                                           appContentPath = path)) {
 
                 SlidanetResponseType.RequestSubmitted -> {
@@ -124,6 +124,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
                 else -> {}
             }
+             */
         }
     }
 
@@ -136,13 +137,13 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private fun convertToSlidanetContentType(contentType: ContentType) : SlidanetContentType {
 
-        val cType = SlidanetContentType.KImage
+        val cType = SlidanetContentType.Image
 
         when (contentType) {
 
-            ContentType.Image -> SlidanetContentType.KImage
-            ContentType.Video -> SlidanetContentType.KVideo
-            ContentType.Text -> SlidanetContentType.KImage
+            ContentType.Image -> SlidanetContentType.Image
+            ContentType.Video -> SlidanetContentType.Video
+            ContentType.Text -> SlidanetContentType.Image
         }
 
         return cType

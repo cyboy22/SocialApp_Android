@@ -41,4 +41,5 @@ internal interface SlidanetObject {
     fun setSnapThreshold(barrier: Float)
     fun getSnapThreshold() : Float
     fun setDisplayNeedsUpdate(state: Boolean)
+
 }

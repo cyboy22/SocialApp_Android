@@ -68,13 +68,13 @@ class Slida: SlidanetResponseHandler {
 
                 for (content in SocialApp.socialContent) {
 
-                    if (content.slidanetId == viewId) {
+                    if (content.slidanetContentAddress == viewId) {
 
                         content.objectWidth = requestData.getInt(SlidanetConstants.object_width)
                         content.objectHeight = requestData.getInt(SlidanetConstants.object_height)
                         SocialApp.slidanetViews[viewId] = (slidanetResponseData.slidanetView)!!
                         val index = SocialApp.socialContent.indexOfFirst {
-                            it.slidanetId == viewId
+                            it.slidanetContentAddress == viewId
                         }
                         if (SocialApp.activityTracker == ActivityTracker.OwnSlidanetContent ||
                                 SocialApp.activityTracker == ActivityTracker.FollowingSlidanetContent) {

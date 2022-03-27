@@ -146,7 +146,7 @@ object Slidanet {
 
         if (isConnected()) {
 
-            var contentType = SlidanetContentType.KImage
+            var contentType = SlidanetContentType.Image
 
             var objectWidth = 0
             var objectHeight = 0
@@ -175,11 +175,11 @@ object Slidanet {
 
                         if (Constants.supportImageFileTypes.contains(it)) {
 
-                            contentType = SlidanetContentType.KImage
+                            contentType = SlidanetContentType.Image
 
                         } else if (Constants.supportVideoFileTypes.contains(it)) {
 
-                            contentType = SlidanetContentType.KVideo
+                            contentType = SlidanetContentType.Video
 
                         } else {
 
@@ -191,7 +191,7 @@ object Slidanet {
                 when (contentType) {
 
 
-                    SlidanetContentType.KImage -> {
+                    SlidanetContentType.Image -> {
 
                         BitmapFactory.decodeFile(uri.toString())?.let {
 
@@ -204,7 +204,7 @@ object Slidanet {
                         }
                     }
 
-                    SlidanetContentType.KVideo -> {
+                    SlidanetContentType.Video -> {
 
                         val retriever = MediaMetadataRetriever()
                         retriever.setDataSource(uri.path)
@@ -234,8 +234,8 @@ object Slidanet {
 
             when (contentType) {
 
-                SlidanetContentType.KImage -> request.put(Constants.contentTypeLiteral, 0)
-                SlidanetContentType.KVideo -> {
+                SlidanetContentType.Image -> request.put(Constants.contentTypeLiteral, 0)
+                SlidanetContentType.Video -> {
                     request.put(Constants.contentTypeLiteral, 1)
                     request.put(Constants.videoStartTimeLiteral, videoStartTime )
                 }
@@ -760,6 +760,7 @@ object Slidanet {
     }
 
     fun loadBitmapFromView(v: View): Bitmap? {
+
         val b = Bitmap.createBitmap(
             v.layoutParams.width,
             v.layoutParams.height,
@@ -803,12 +804,12 @@ object Slidanet {
             when (requestData.getInt(Constants.contentTypeLiteral)) {
 
                 0 -> slidanetView = SlidanetView(contentAddress = slidanetContentAddress,
-                                                 contentType = SlidanetContentType.KImage,
+                                                 contentType = SlidanetContentType.Image,
                                                  contentPath = contentPath,
                                                  applicationContext = it.applicationContext!!)
                 1 -> { val videoStartTime = requestData.getDouble(Constants.videoStartTimeLiteral)
                        slidanetView = SlidanetView(contentAddress = slidanetContentAddress,
-                                                   contentType = SlidanetContentType.KVideo,
+                                                   contentType = SlidanetContentType.Video,
                                                    contentPath = contentPath,
                                                    videoStartTime = videoStartTime.toFloat(),
                                                    applicationContext = it.applicationContext!!)
@@ -822,6 +823,7 @@ object Slidanet {
     internal fun getRawResource(resource: Int): String? {
 
         var res: String? = null
+
         try {
             val input: InputStream = applicationContext.resources.openRawResource(resource)
             val baos = ByteArrayOutputStream()
@@ -889,123 +891,3 @@ object Slidanet {
         rendererInitialized = state
     }
 }
-/*
-fun isLettersOrDigits(chars: String): Boolean {
-    for (c in chars)
-    {
-        if (c !in 'A'..'Z' && c !in 'a'..'z' && c !in '0'..'9') {
-            return false
-        }
-    }
-    return true
-}
-
-fun getFieldCapacity(value: Int) : Int {
-
-    var result = 0
-
-    when (value) {
-        1 -> result = 9
-        2 -> result = 99
-        3 -> result = 999
-        4 -> result = 9999
-        5 -> result = 99999
-        6 -> result = 999999
-        7 -> result = 9999999
-        8 -> result = 99999999
-        9 -> result = 999999999
-        else -> result = 999999999
-    }
-
-    return result
-}
-
-fun isValidIpAddress(ip: String?): Boolean {
-
-    try {
-        if (ip == null || ip.isEmpty()) {
-            return false
-        }
-        val parts = ip.split("\\.".toRegex()).toTypedArray()
-        if (parts.size != 4) {
-            return false
-        }
-
-        for (s in parts) {
-            val i = s.toInt()
-            if (i < 0 || i > 255) {
-                return false
-            }
-        }
-
-        if (ip.endsWith(".")) {
-            return false
-        }
-
-        return true
-
-    } catch (nfe: NumberFormatException) {
-        return false
-    }
-}
-
-fun intToBoolean(value: Int) : Boolean {
-    return value > 0
-}
-
-fun isValidPortNumber(port: Int) : Boolean {
-
-    return port in 1..0xFFFF
-}
-
-internal fun createUUID() : String {
-    return UUID.randomUUID().toString()
-}
-
-internal fun booleanToInt(b: Boolean): Int {
-    return if (b) 1 else 0
-}
-
-internal fun Boolean.toInt() = if (this) 1 else 0
-
-internal fun floatTimeToMicroseconds(floatTime: Float) : Long {
-    return (floatTime * 1000000L).toLong()
-}
-
-val Int.bool:Boolean get() = this == 1
-
-internal fun getVideoFrame(atTime: Float, uri: Uri) : Bitmap? {
-
-    var bitmap: Bitmap? = null
-
-    try {
-        val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(requireNotNull(uri.path))
-        bitmap = retriever.getFrameAtTime(floatTimeToMicroseconds(atTime), MediaMetadataRetriever.OPTION_CLOSEST)
-    } catch (e: IllegalArgumentException) {
-        return bitmap
-    } catch (e: SecurityException) {
-        return bitmap
-    }
-
-    return bitmap
-}
-
-internal fun createFloatBuffer(coords: FloatArray): FloatBuffer {
-    val bb = ByteBuffer.allocateDirect(coords.size * Constants.sizeOfFloat)
-    bb.order(ByteOrder.nativeOrder())
-    val fb = bb.asFloatBuffer()
-    fb.put(coords)
-    fb.position(0)
-    return fb
-}
-
-internal fun createShortBuffer(coords: ShortArray): ShortBuffer {
-    val bb = ByteBuffer.allocateDirect(coords.size * 4)
-    bb.order(ByteOrder.nativeOrder())
-    val sb = bb.asShortBuffer()
-    sb.put(coords)
-    sb.position(0)
-    return sb
-}
-*/

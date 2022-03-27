@@ -142,6 +142,7 @@ internal class SlidanetServer(): SlidanetRequest {
 
         SlidanetMessage(SlidanetMessageType.ConnectContentRequest).apply {
             putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, slidanetContentAddress.length)
             putString(slidanetContentAddress)
         }.send()
     }

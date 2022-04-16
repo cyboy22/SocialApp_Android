@@ -1,3 +1,5 @@
+import android.graphics.Color
+
 internal object Constants {
 
     internal const val majorVersion = 1
@@ -55,5 +57,11 @@ internal object Constants {
     const val rotateRight = 270
     val supportImageFileTypes = arrayOf("jpeg", "png")
     val supportVideoFileTypes = arrayOf("mp4", "wav")
-
+    const val defaultBorderColor = Color.RED
+    const val defaultBorderWidth = 5
+    const val share_style = "share_style"
+    const val peek = "peek"
+    const val pix = "pix"
+    const val slide = "slide"
+    const val defaultShaderName = "default"
 }

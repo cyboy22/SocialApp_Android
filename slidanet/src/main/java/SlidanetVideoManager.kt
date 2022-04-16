@@ -1,4 +1,5 @@
-interface SlidanetVideoManager {
+internal interface SlidanetVideoManager {
+
     fun onVideoPrepared()
     fun onVideoStarted()
     fun onVideoFinished()

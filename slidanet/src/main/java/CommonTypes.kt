@@ -1,35 +1,43 @@
-enum class SlidanetRequestType { Connect,
+ enum class SlidanetRequestType { Connect,
                                  ConnectContent,
+                                 EditContent,
+                                 CommitContentEditing,
+                                 CancelContentEditing,
+                                 SetContentShareStyle,
+                                 SetMoveContent,
+                                 GiveContent,
+                                 TakeContent,
+                                 SetContentVisibilityPreference,
+                                 PlayContent,
+                                 PauseContent,
+                                 SetVideoStartTime,
                                  DisconnectContent,
                                  DisconnectAllContent,
                                  Disconnect,
+                                 SlidanetUpdate,
+                                 SetContentFilter,
+                                 HideContent,
+                                 UnhideContent,
                                  MaxValue }
 
-internal enum class ShaderType { DefaultShader }
+enum class SlidanetSharingStyle { Slide,
+                                  Peek,
+                                  Pix }
 
-internal enum class ShareModeType { Slide,
-                                    Peek,
-                                    Pix,
+internal enum class ShareModeType { SlideXYZ,
+                                    SlidePeekDefine,
+                                    SlidePeekSlide,
+                                    SlidePixDefine,
+                                    SlidePixSlide,
                                     MaxValue }
 
-internal enum class SlideModeType { SlideNone,
-                                    SlideDefinition,
-                                    MaxValue }
+enum class SlidanetVisibilityPreferenceType { RequestLess,
+                                              Neutral,
+                                              RequestMore,
+                                              MaxValue }
 
-internal enum class PeekModeType { PeekNone,
-                                   PeekDefinition,
-                                   PeekSlide,
-                                   MaxValue }
-
-internal enum class PixModeType { PixNone,
-                                  PixDefinition,
-                                  PixSlide,
-                                  PixDynamic,
-                                  MaxValue }
-
-internal enum class VisibilityPreferenceType { RequestLess,
-                                               Neutral,
-                                               RequestMore }
+ enum class SlidanetContentFilterType { Default,
+                                        MaxValue }
 
 internal enum class SlidanetMessageType { AuthenticateConnectionRequest,
                                           AuthenticateConnectionResponse,
@@ -58,14 +66,11 @@ internal enum class SlidanetMessageType { AuthenticateConnectionRequest,
                                           DisconnectAllContentResponse,
                                           TakeNotificationRequest,
                                           VisibilityNotificationRequest,
-                                          SetMuteContentRequest,
-                                          SetMuteContentResponse,
                                           SetHideContentRequest,
                                           SetHideContentResponse,
-                                          SetFreezeContentRequest,
-                                          SetFreezeContentResponse,
                                           DisconnectRequest,
                                           DisconnectResponse,
+                                          ViewerLeftNotificationRequest,
                                           ViewerJoinedNotificationRequest,
                                           MaxValue }
 
@@ -104,21 +109,57 @@ enum class SlidanetResponseType { Ok,
                                   DisconnectedFromContent,
                                   ContentAddressNotInApplication,
                                   ContentAddressNotFound,
-                                  ViewGiven,
-                                  ViewTaken,
+                                  ContentGiven,
+                                  ContentTaken,
                                   VisibilityPreferenceSet,
                                   ShareModeDefinitionSet,
-                                  MuteSet,
-                                  MuteUnset,
                                   HideSet,
                                   HideUnset,
-                                  FreezeSet,
-                                  FreezeUnset,
+                                  AlreadyConnectedToSlidanet,
+                                  AlreadyConnectedToContent,
+                                  NotConnectedToContent,
+                                  ScreenWidthMustBeGreaterThanZero,
+                                  ScreenHeightMustBeGreaterThanZero,
+                                  ScreenHeightMustBeGreaterThanWidth,
+                                  EditingContent,
+                                  CommittedContentEdits,
+                                  CancelledContentEdits,
+                                  DoneEditingContentAddress,
+                                  NotEditingContent,
+                                  EditingInProgress,
+                                  AddressNotMatchingEditedContent,
+                                  NotContentAddressOwner,
+                                  UpdatesImmediatelyDistributed,
+                                  CancelNotAllowedInThisState,
+                                  InvalidSlideParameters,
+                                  InvalidPeekParameters,
+                                  InvalidPixParameters,
+                                  GiveAlreadyEnabled,
+                                  GiveNotEnabled,
+                                  ContentAlreadyTakenBack,
+                                  AlreadyContentAddressOwner,
+                                  PreferenceMatchesCurrent,
+                                  ContentAlreadyFrozen,
+                                  VideoContentTypeRequired,
+                                  ContentFilterAlreadySet,
+                                  ContentAlreadyHidden,
+                                  ContentNotHidden,
+                                  ContentHidden,
+                                  ContentUnhidden,
+                                  FilterSet,
+                                  AlreadyInSlideMode,
+                                  AlreadyInPeekMode,
+                                  AlreadyInPixMode,
                                   MaxValue }
 
-
 enum class SlidanetContentType { Image,
-                                 Video,
+                                 StaticVideo,
+                                 StreamedVideo,
                                  MaxValue }
 
-enum class SlidanetFilterType { Default }
+internal enum class SlidanetEditingStateType { Active, InActive }
+
+ internal enum class SlidanetEditingInitiatorType { DoubleTap, API, LocalShareStyleUpdate, remoteShareStyleUpdate, LocalEditing }
+
+internal enum class SlidanetLoggingRequestType { move }
+

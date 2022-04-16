@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
@@ -114,13 +115,17 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
         if (!Slidanet.isConnected()) {
 
-            val response = Slidanet.connect(applicationName = SocialApp.slidanetApplicationName,
-                                            applicationPassword = SocialApp.slidanetApplicationPassword,
-                                            slidaName = SocialApp.slidanetName,
-                                            ipAddress = SocialApp.slidanetServiceIpAddress,
-                                            ipPort = SocialApp.slidanetServiceIpPort,
-                                            appContext = SocialApp.applicationContext,
-                                            responseHandler = SocialApp.slida)
+            val response = Slidanet.connect(
+                applicationName = SocialApp.slidanetApplicationName,
+                applicationPassword = SocialApp.slidanetApplicationPassword,
+                slidaName = SocialApp.slidanetName,
+                ipAddress = SocialApp.slidanetServiceIpAddress,
+                ipPort = SocialApp.slidanetServiceIpPort,
+                applicationContext = SocialApp.applicationContext,
+                screenWidthInPixels = (SocialApp.screenWidth * SocialApp.density).toInt(),
+                screenHeightInPixels = (SocialApp.screenHeight * SocialApp.density).toInt(),
+                responseHandler = SocialApp.slida
+            )
         }
     }
 
@@ -135,5 +140,11 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
     override fun refreshSlidanetContent(index: Int) {
 
         adapter.notifyItemChanged(index)
+    }
+
+    override fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout) {
+
+        findViewById<ConstraintLayout>(android.R.id.content).addView(slidanetEditorLayout)
+
     }
 }

@@ -5,6 +5,7 @@ import org.json.JSONObject
 public data class SlidanetResponseData(val requestCode: SlidanetRequestType,
                                        val requestInfo: JSONObject,
                                        var responseCode: SlidanetResponseType,
-                                       var responseInfo: JSONObject? = null,
+                                       val responseInfo: JSONObject? = null,
                                        val applicationContext: Context? = null,
-                                       var slidanetView: ConstraintLayout? = null)
+                                       var slidanetView: ConstraintLayout? = null,
+                                       val editorView: ConstraintLayout? = null)

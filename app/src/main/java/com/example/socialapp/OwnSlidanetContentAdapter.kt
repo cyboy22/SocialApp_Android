@@ -110,7 +110,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
                 ContentType.Text.ordinal -> (holder as TextViewHolder).bind(content)
             }
         } ?: kotlin.run {
-            /*
+
             val path = File(ContextWrapper(SocialApp.applicationContext).getDir(Constants.contentDirectory,
                                                                                 Context.MODE_PRIVATE), content.contentId).absolutePath
 
@@ -124,7 +124,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
                 else -> {}
             }
-             */
+
         }
     }
 
@@ -142,7 +142,7 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
         when (contentType) {
 
             ContentType.Image -> SlidanetContentType.Image
-            ContentType.Video -> SlidanetContentType.Video
+            ContentType.Video -> SlidanetContentType.StaticVideo
             ContentType.Text -> SlidanetContentType.Image
         }
 

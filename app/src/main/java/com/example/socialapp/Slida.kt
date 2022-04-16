@@ -24,6 +24,10 @@ class Slida: SlidanetResponseHandler {
                 handleConnectToViewResponse(responseData)
             }
 
+            SlidanetRequestType.EditContent -> {
+                handleEditViewResponse(responseData)
+            }
+
             else -> {}
         }
     }
@@ -77,7 +81,8 @@ class Slida: SlidanetResponseHandler {
                             it.slidanetContentAddress == viewId
                         }
                         if (SocialApp.activityTracker == ActivityTracker.OwnSlidanetContent ||
-                                SocialApp.activityTracker == ActivityTracker.FollowingSlidanetContent) {
+                            SocialApp.activityTracker == ActivityTracker.FollowingSlidanetContent
+                        ) {
                             SocialApp.slidanetCallbacks.refreshSlidanetContent(index)
                         }
                     }
@@ -94,5 +99,9 @@ class Slida: SlidanetResponseHandler {
 
             else -> {}
         }
+    }
+
+    private fun handleEditViewResponse(slidanetResponseData: SlidanetResponseData) {
+
     }
 }

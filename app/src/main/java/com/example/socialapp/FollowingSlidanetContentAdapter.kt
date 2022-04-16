@@ -141,7 +141,7 @@ class FollowingSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewH
         when (contentType) {
 
             ContentType.Image -> SlidanetContentType.Image
-            ContentType.Video -> SlidanetContentType.Video
+            ContentType.Video -> SlidanetContentType.StaticVideo
             ContentType.Text -> SlidanetContentType.Image
         }
 

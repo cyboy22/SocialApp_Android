@@ -69,6 +69,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         var localReq = 0
 
         try {
+
             lock.withLock {
 
                 isRunning = true
@@ -82,6 +83,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
             while (localIsRunning) {
 
                 try {
+
                     lock.withLock {
 
                         localIsRunning = isRunning
@@ -92,6 +94,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                     if (localIsRunning) {
 
                         when (state) {
+
                             Constants.stateStop -> localIsRunning = processStop(localReq)
                             Constants.statePrepared -> localIsRunning = processPrepared(localReq)
                             Constants.statePlaying -> localIsRunning = processPlaying(localReq)
@@ -99,8 +102,11 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                         }
                     }
                 } catch (e: InterruptedException) {
+
                     break
+
                 } catch (e: Exception) {
+
                     Log.e(tag, "MoviePlayerTask:", e)
                     break
                 }
@@ -118,13 +124,18 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         while (isRunning && !mVideoInputDone && !mVideoOutputDone) {
 
             try {
+
                 if (!mVideoInputDone) {
+
                     handleInputVideo()
                 }
+
                 if (!mVideoOutputDone) {
+
                     handleOutputVideo(callback)
                 }
             } catch (e: java.lang.Exception) {
+
                 Log.e(tag, "VideoTask:", e)
                 break
             }
@@ -153,9 +164,11 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                 }
 
                 if (!audioOutputDone) {
+
                     handleOutputAudio(callback)
                 }
             } catch (e: java.lang.Exception) {
+
                 Log.e(tag, "VideoTask:", e)
                 break
             }
@@ -180,6 +193,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
 
             try {
                 if (!isRunning) lockCondition.await()
+
             } catch (e: InterruptedException) {
             }
         }
@@ -265,6 +279,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                 lockCondition.signalAll()
 
                 try {
+
                     lockCondition.await(50, TimeUnit.MILLISECONDS)
                 } catch (e: InterruptedException) { // ignore
                 }
@@ -288,6 +303,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (debug) Log.v(tag, "resume:")
 
         lock.withLock {
+
             request = Constants.reqResume
             lockCondition.signalAll()
         }
@@ -337,6 +353,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         var localIsRunning = true
 
         when (req) {
+
             Constants.reqStart -> handleStart()
             Constants.reqPause,
             Constants.reqResume -> throw IllegalStateException("invalid state:$state")
@@ -416,12 +433,14 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         lock.withLock {
 
             if (state != Constants.stateStop) {
+
                 throw RuntimeException("invalid state:$state")
             }
         }
 
         val src = File(source_file)
         if (TextUtils.isEmpty(source_file) || !src.canRead()) {
+
             throw FileNotFoundException("Unable to read $source_file")
         }
         audioTrackIndex = -1
@@ -435,6 +454,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (audioEnabled) audioTrackIndex = internalPrepareAudio(source_file)
         hasAudio = audioTrackIndex >= 0
         if (videoTrackIndex < 0 && audioTrackIndex < 0) {
+
             throw RuntimeException("No video and audio track found in $source_file")
         }
 
@@ -446,16 +466,22 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
 
         var trackIndex = -1
         videoMediaExtractor = MediaExtractor()
+
         try {
+
             videoMediaExtractor?.setDataSource(sourceFile!!)
             trackIndex = selectTrack(videoMediaExtractor!!, "video/")
+
             if (trackIndex >= 0) {
+
                 videoMediaExtractor?.selectTrack(trackIndex)
                 val format = videoMediaExtractor?.getTrackFormat(trackIndex)
                 videoWidth = format!!.getInteger(MediaFormat.KEY_WIDTH)
                 videoHeight = format.getInteger(MediaFormat.KEY_HEIGHT)
                 duration = format.getLong(MediaFormat.KEY_DURATION)
+
                 if (debug) Log.v(
+
                     tag, java.lang.String.format(
                         "format:size(%d,%d),duration=%d,bps=%d,framerate=%f,rotation=%d",
                         videoWidth, videoHeight, duration, bitrate, frameRate, rotation
@@ -480,18 +506,24 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
 
         var trackIndex = -1
         audioMediaExtractor = MediaExtractor()
+
         try {
+
             audioMediaExtractor?.setDataSource(sourceFile!!)
             trackIndex = selectTrack(audioMediaExtractor!!, "audio/")
+
             if (trackIndex >= 0) {
+
                 audioMediaExtractor?.selectTrack(trackIndex)
                 val format: MediaFormat = audioMediaExtractor!!.getTrackFormat(trackIndex)
                 audioChannels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
                 audioSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
 
                 val channelConfig: Int = if (audioChannels == 1) {
+
                     AudioFormat.CHANNEL_OUT_MONO
                 } else {
+
                     AudioFormat.CHANNEL_OUT_STEREO
                 }
 
@@ -499,12 +531,16 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                     channelConfig,
                     AudioFormat.ENCODING_PCM_16BIT
                 )
+
                 val max_input_size = format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE)
                 audioInputBufSize = if (min_buf_size > 0) min_buf_size * 4 else max_input_size
+
                 if (audioInputBufSize > max_input_size) audioInputBufSize = max_input_size
                 val frameSizeInBytes: Int = audioChannels * 2
                 audioInputBufSize = audioInputBufSize / frameSizeInBytes * frameSizeInBytes
+
                 if (debug) Log.v(
+
                     tag,
                     java.lang.String.format(
                         "getMinBufferSize=%d,max_input_size=%d,mAudioInputBufSize=%d",
@@ -533,7 +569,6 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                     AudioTrack.MODE_STREAM,
                     sessionId)
 
-
                 try {
                     audioTrack?.play()
                 } catch (e: java.lang.Exception) {
@@ -559,30 +594,35 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
 
         var value: String? = metadata!!.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
         videoWidth = when (value != null) {
+
             true -> value.toInt()
             false-> 0
         }
 
         value = metadata!!.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
         videoHeight = when (value != null) {
+
             true -> value.toInt()
             false-> 0
         }
 
         value = metadata!!.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
         rotation = when (value != null) {
+
             true -> value.toInt()
             false-> 0
         }
 
         value = metadata!!.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
         bitrate = when (value != null) {
+
             true -> value.toInt()
             false-> 0
         }
 
         value = metadata!!.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
         duration = when (value != null) {
+
             true -> value.toLong() * 1000L
             false-> 0
         }
@@ -593,6 +633,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (debug) Log.v(tag, "handleStart:")
 
         lock.withLock {
+
             if (state != Constants.statePrepared) throw java.lang.RuntimeException("invalid state:$state")
             state = Constants.statePlaying
         }
@@ -609,8 +650,10 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         var audioThread: Thread? = null
 
         if (videoTrackIndex >= 0) {
+
             val codec = internalStartVideo(videoMediaExtractor!!, videoTrackIndex)
             if (codec != null) {
+
                 videoMediaCodec = codec
                 videoBufferInfo = MediaCodec.BufferInfo()
             }
@@ -624,8 +667,10 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         audioInputDone = audioOutputDone
 
         if (audioTrackIndex >= 0) {
+
             val codec = internalStartAudio(audioMediaExtractor!!, audioTrackIndex)
             if (codec != null) {
+
                 audioMediaCodec = codec
                 audioBufferInfo = MediaCodec.BufferInfo()
             }
@@ -653,11 +698,15 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
             val mime = format.getString(MediaFormat.KEY_MIME)
 
             if (mime != null) {
+
                 try {
+
                     codec = MediaCodec.createDecoderByType(mime)
                     codec.configure(format, outputSurface, null, 0)
                     codec.start()
+
                 } catch (e: IOException) {
+
                     Log.w(tag, e)
                     codec = null
                 }
@@ -668,8 +717,8 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         return codec
     }
 
-    protected fun internalStartAudio(media_extractor: MediaExtractor,
-                                     trackIndex: Int): MediaCodec? {
+    private fun internalStartAudio(media_extractor: MediaExtractor,
+                                   trackIndex: Int): MediaCodec? {
 
         if (debug) Log.v(tag, "internalStartAudio:")
 
@@ -705,10 +754,12 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (newTime < 0) return
 
         if (videoTrackIndex >= 0) {
+
             videoMediaExtractor?.seekTo(newTime, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
             videoMediaExtractor?.advance()
         }
         if (audioTrackIndex >= 0) {
+
             audioMediaExtractor?.seekTo(newTime, MediaExtractor.SEEK_TO_CLOSEST_SYNC)
             audioMediaExtractor?.advance()
         }
@@ -720,11 +771,14 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         lock.withLock {
 
             try {
+
                 lockCondition.await()
+
             } catch (e: InterruptedException) {
             }
         }
         if (mVideoInputDone && mVideoOutputDone && audioInputDone && audioOutputDone) {
+
             if (debug) Log.d(tag, "Reached EOS, looping check")
             handleStop()
         }
@@ -742,8 +796,10 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
             val inputBufIndex = codec.dequeueInputBuffer(timeoutUsec)
             if (inputBufIndex == MediaCodec.INFO_TRY_AGAIN_LATER) break
             if (inputBufIndex >= 0) {
+
                 val size = extractor.readSampleData(inputBuffers[inputBufIndex], 0)
                 if (size > 0) {
+
                     codec.queueInputBuffer(inputBufIndex, 0, size, presentationTimeUs, 0)
                 }
                 result = extractor.advance() // return false if no data is available
@@ -765,8 +821,10 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (!b) {
             if (debug) Log.i(tag, "video track input reached EOS")
             while (isRunning) {
+
                 val inputBufIndex: Int = videoMediaCodec!!.dequeueInputBuffer(timeoutUsec)
                 if (inputBufIndex >= 0) {
+
                     videoMediaCodec!!.queueInputBuffer(
                         inputBufIndex, 0, 0, 0L,
                         MediaCodec.BUFFER_FLAG_END_OF_STREAM
@@ -777,6 +835,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
             }
 
             videoTaskLock.withLock {
+
                 mVideoInputDone = true
                 videoTaskLockCondition.signalAll()
             }
@@ -789,38 +848,48 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
 
             val decoderStatus: Int = videoMediaCodec!!.dequeueOutputBuffer(videoBufferInfo!!, timeoutUsec)
             if (decoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+
                 return
+
             } else if (decoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+
                 val newFormat: MediaFormat = videoMediaCodec!!.getOutputFormat()
                 if (debug) Log.d(
+
                     tag,
                     "video decoder output format changed: $newFormat"
                 )
             } else if (decoderStatus < 0) {
+
                 throw java.lang.RuntimeException(
+
                     "unexpected result from video decoder.dequeueOutputBuffer: $decoderStatus")
             } else { // decoderStatus >= 0
                 var doRender = false
                 if (videoBufferInfo!!.size > 0) {
+
                     doRender = (videoBufferInfo!!.size != 0
-                            && !internalWriteVideo(
-                        videoOutputBuffers!!.get(decoderStatus),
+                            && !internalWriteVideo(videoOutputBuffers!!.get(decoderStatus),
                         0, videoBufferInfo!!.size, videoBufferInfo!!.presentationTimeUs
                     ))
                     if (doRender) {
+
                         if (!callback.onFrameAvailable(videoBufferInfo!!.presentationTimeUs))
-                            videoStartTime =
-                                adjustPresentationTime(videoTaskLock,
-                                    videoStartTime,
-                                    videoBufferInfo!!.presentationTimeUs)
+
+                            videoStartTime = adjustPresentationTime(videoTaskLock,
+                                                                    videoStartTime,
+                                                                    videoBufferInfo!!.presentationTimeUs)
                     }
                 }
 
                 videoMediaCodec?.releaseOutputBuffer(decoderStatus, doRender)
                 callback.updateTexture()
                 if (videoBufferInfo!!.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+
                     if (debug) Log.d(tag, "video:output EOS")
+
                     videoTaskLock.withLock {
+
                         mVideoOutputDone = true
                         videoTaskLockCondition.signalAll()
                     }
@@ -840,18 +909,25 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
     private fun handleInputAudio() {
 
         val presentationTimeUs: Long = audioMediaExtractor!!.sampleTime
-        val b = internalProcessInput(audioMediaCodec!!, audioMediaExtractor!!, audioInputBuffers!!, presentationTimeUs, true)
+        val b = internalProcessInput(audioMediaCodec!!,
+                                     audioMediaExtractor!!,
+                                     audioInputBuffers!!,
+                                     presentationTimeUs, true)
         if (!b) {
+
             if (debug) Log.i(tag, "audio track input reached EOS")
             while (isRunning) {
+
                 val inputBufIndex: Int = audioMediaCodec!!.dequeueInputBuffer(timeoutUsec)
                 if (inputBufIndex >= 0) {
+
                     audioMediaCodec!!.queueInputBuffer(inputBufIndex,
-                        0,
-                        0,
-                        0L,
+                                                 0,
+                                                  0,
+                                      0L,
                         MediaCodec.BUFFER_FLAG_END_OF_STREAM)
                     if (debug) Log.v(tag, "sent input EOS:$audioMediaCodec")
+
                     break
                 }
             }
@@ -866,38 +942,45 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
     private fun handleOutputAudio(callback: SlidanetVideoManager) { //		if (DEBUG) Log.v(TAG, "handleDrainAudio:");
 
         while (isRunning && !audioOutputDone) {
-            val decoderStatus: Int =
-                audioMediaCodec!!.dequeueOutputBuffer(audioBufferInfo!!, timeoutUsec)
+
+            val decoderStatus: Int = audioMediaCodec!!.dequeueOutputBuffer(audioBufferInfo!!, timeoutUsec)
             if (decoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+
                 return
+
             } else if (decoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                val newFormat: MediaFormat = audioMediaCodec!!.getOutputFormat()
-                if (debug) Log.d(
-                    tag,
-                    "audio decoder output format changed: $newFormat"
-                )
+
+                val newFormat: MediaFormat = audioMediaCodec!!.outputFormat
+
+                if (debug) Log.d(tag, "audio decoder output format changed: $newFormat")
             } else if (decoderStatus < 0) {
+
                 throw java.lang.RuntimeException(
+
                     "unexpected result from audio decoder.dequeueOutputBuffer: $decoderStatus"
                 )
             } else { // decoderStatus >= 0
+
                 if (audioBufferInfo!!.size > 0) {
-                    internalWriteAudio(
-                        audioOutputBuffers!!.get(decoderStatus),
-                        0, audioBufferInfo!!.size, audioBufferInfo!!.presentationTimeUs
+
+                    internalWriteAudio(audioOutputBuffers!![decoderStatus],
+                                 0,
+                                       audioBufferInfo!!.size,
+                                       audioBufferInfo!!.presentationTimeUs
                     )
                     if (!callback.onFrameAvailable(audioBufferInfo!!.presentationTimeUs)) audioStartTime =
                         adjustPresentationTime(audioTaskLock,
-                            audioStartTime,
-                            audioBufferInfo!!.presentationTimeUs)
+                                               audioStartTime,
+                                               audioBufferInfo!!.presentationTimeUs)
                 }
 
                 audioMediaCodec!!.releaseOutputBuffer(decoderStatus, false)
+
                 if (audioBufferInfo!!.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+
                     if (debug) Log.d(tag, "audio:output EOS")
-                    audioTaskLock.withLock {
-                        audioOutputDone = true
-                        audioTaskLockCondition.signalAll()
+                    audioTaskLock.withLock { audioOutputDone = true
+                                             audioTaskLockCondition.signalAll()
                     }
                 }
             }
@@ -923,14 +1006,21 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                                        presentationTimeUs: Long): Long {
 
         if (startTime > 0) {
+
             var t = presentationTimeUs - (System.nanoTime() / 1000 - startTime)
+
             while (t > 0) {
+
                 lock.withLock {
+
                     try {
+
                         lockCondition.await((t % 1000L * 1000L), TimeUnit.MILLISECONDS)
+
                     } catch (e: InterruptedException) {
                     }
                     if (state == Constants.reqStop || state == Constants.reqQuit) {
+
                         lockCondition.signalAll()
                         return presentationTimeUs
                     }
@@ -938,7 +1028,9 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
                 t = presentationTimeUs - (System.nanoTime() / 1000L - startTime)
             }
             return startTime
+
         } else {
+
             System.nanoTime() / 1000L
         }
 
@@ -950,11 +1042,17 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (debug) Log.v(tag, "handleStop:")
 
         videoTaskLock.withLock {
+
             if (videoTrackIndex >= 0) {
+
                 mVideoOutputDone = true
+
                 while (!mVideoInputDone) {
+
                     try {
+
                         videoTaskLockCondition.await()
+
                     } catch (e: InterruptedException) {
                         break
                     }
@@ -967,11 +1065,17 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         }
 
         audioTaskLock.withLock {
+
             if (audioTrackIndex >= 0) {
+
                 audioOutputDone = true
+
                 while (!audioInputDone) {
+
                     try {
+
                         audioTaskLockCondition.await()
+
                     } catch (e: InterruptedException) {
                         break
                     }
@@ -1025,6 +1129,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         if (audioTrack != null) {
 
             if (audioTrack != null) {
+
                 val state = audioTrack!!.state
                 if (state != AudioTrack.STATE_UNINITIALIZED) audioTrack?.stop()
             }
@@ -1040,10 +1145,14 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
         var format: MediaFormat
         var mime: String
         for (i in 0 until numTracks) {
+
             format = extractor.getTrackFormat(i)
             mime = format.getString(MediaFormat.KEY_MIME)!!
+
             if (mime.startsWith(mimeType!!)) {
+
                 if (debug) {
+
                     Log.d(
                         tagStatic,
                         "Extractor selected track $i ($mime): $format"

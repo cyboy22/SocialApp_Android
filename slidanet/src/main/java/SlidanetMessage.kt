@@ -12,10 +12,12 @@ internal class SlidanetMessage {
     private var messageSize = 0
 
     constructor(messageType: SlidanetMessageType) {
+
         this.messageType = messageType
     }
 
     constructor(data: ByteArray) {
+
         readBody = ByteArrayInputStream(data)
     }
 
@@ -25,6 +27,7 @@ internal class SlidanetMessage {
     fun putString(value: String) {
 
         value.toByteArray(Charset.forName("UTF-8")).apply {
+
             writeBody.write(this, 0, this.size)
             messageSize += this.size
         }
@@ -33,7 +36,9 @@ internal class SlidanetMessage {
     fun putInteger(width: Int, value: Int) {
 
         String.format("%" + width.toString() + "d", value).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
+
                 writeBody.write(it, 0, it.size)
                 messageSize += it.size
             }
@@ -44,6 +49,7 @@ internal class SlidanetMessage {
 
         String.format(Slidanet.locale, "-%10.3f", value).apply {
             this.toByteArray(Charset.forName("UTF-8")).let {
+
                 writeBody.write(it, 0, it.size)
                 messageSize += it.size
             }
@@ -66,11 +72,13 @@ internal class SlidanetMessage {
 
         val outputBuffer = ByteArray(width)
         if (readBody?.read(outputBuffer, 0, width) == width) {
+
             String(outputBuffer, Charset.forName("UTF-8")).apply {
                 result = this.trim().toInt()
                 print("Hello")
             }
         } else {
+
             result = null
         }
 
@@ -86,6 +94,7 @@ internal class SlidanetMessage {
 
         val outputBuffer = ByteArray(length)
         if (readBody?.read(outputBuffer, 0, length) == length) {
+
             result = String(outputBuffer, Charset.forName("UTF-8"))
         } else {
             result = null
@@ -101,10 +110,13 @@ internal class SlidanetMessage {
 
         val outputBuffer = ByteArray(Constants.floatWidth)
         if (readBody?.read(outputBuffer, 0, Constants.floatWidth) == Constants.floatWidth) {
+
             String(outputBuffer, Charset.forName("UTF-8")).apply {
+
                 result = this.toFloat()
             }
         } else {
+
             result = null
         }
 
@@ -141,18 +153,23 @@ internal class SlidanetMessage {
         val message = ByteArrayOutputStream()
 
         String.format("%" + Constants.networkMessageSizeLength.toString() + "d", messageSize).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
+
                 message.write(it, 0, it.size)
             }
         }
 
         String.format("%" + Constants.networkMessageTypeLength.toString() + "d", messageType.ordinal).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
+
                 message.write(it, 0, it.size)
             }
         }
 
         writeBody.toByteArray().let {
+
             message.write(it, 0, it.size)
         }
 

@@ -1,11 +1,11 @@
 package com.example.socialapp
 
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.util.DisplayMetrics
 import android.app.Activity
 import android.graphics.Point
 import android.os.Build
+import android.os.Bundle
+import android.util.DisplayMetrics
+import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
@@ -59,8 +59,9 @@ val Activity.screenSizeInDp: Point
 
         val point = Point()
         displayMetrics.apply {
+            val a = widthPixels
+            val b = heightPixels
             point.x = (widthPixels / density).roundToInt()
-
             point.y = (heightPixels / density).roundToInt()
         }
 

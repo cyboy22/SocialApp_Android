@@ -30,10 +30,12 @@ internal class SlidanetServer(): SlidanetRequest {
                 ipPort: Int) {
 
         try {
+
             initialize(requestId, ipAddress, ipPort)
             processSession()
 
         } catch (e: Exception) {
+
             sslSocket?.close()
             e.message?.let { Log.d(TAG, it) }
         }
@@ -93,11 +95,13 @@ internal class SlidanetServer(): SlidanetRequest {
 
             inputStream?.readFully(messageHeader)
             SlidanetMessage(messageHeader).let {
+
                 val messageLength = requireNotNull(it.getInteger(Constants.integerWidth))
                 val messageType = requireNotNull(it.getInteger(Constants.shortWidth))
                 val messageBody = ByteArray(messageLength)
                 inputStream?.readFully(messageBody)
                 mainHandler?.post { Slidanet.processServerMessage(
+
                     SlidanetMessageType.values()[messageType], messageBody) }
             }
         }
@@ -134,23 +138,222 @@ internal class SlidanetServer(): SlidanetRequest {
     override fun disconnectFromNetwork(requestId: Int) {
 
         SlidanetMessage(SlidanetMessageType.DisconnectRequest).apply {
+
             putInteger(Constants.integerWidth, requestId)
+
         }.send()
     }
 
-    override fun connectContent(requestId: Int, slidanetContentAddress: String) {
+    override fun connectContent(requestId: Int, contentAddress: String) {
 
         SlidanetMessage(SlidanetMessageType.ConnectContentRequest).apply {
+
             putInteger(Constants.integerWidth, requestId)
-            putInteger(Constants.nameWidth, slidanetContentAddress.length)
-            putString(slidanetContentAddress)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+
+        }.send()
+    }
+
+    override fun disconnectContent(requestId: Int, contentAddress: String) {
+
+        SlidanetMessage(SlidanetMessageType.DisconnectContentRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+
         }.send()
     }
 
     override fun disconnectAllContent(requestId: Int) {
 
         SlidanetMessage(SlidanetMessageType.DisconnectAllContentRequest).apply {
+
             putInteger(Constants.integerWidth, requestId)
+
+        }.send()
+    }
+
+    override fun distributeTranslation(contentAddress: String,
+                                       shareMode: ShareModeType,
+                                       x: Float,
+                                       y: Float,
+                                       z: Float) {
+
+        SlidanetMessage(SlidanetMessageType.MoveContentRequest).apply {
+
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, shareMode.ordinal)
+            putFloat(x)
+            putFloat(y)
+            putFloat(z)
+
+        }.send()
+    }
+
+    override fun distributeMaskBox(contentAddress: String,
+                                   shareMode: ShareModeType,
+                                   boxBeginX: Float,
+                                   boxBeginY: Float,
+                                   boxEndX: Float,
+                                   boxEndY: Float) {
+
+        SlidanetMessage(SlidanetMessageType.MoveContentRequest).apply {
+
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, shareMode.ordinal)
+            putFloat(boxBeginX)
+            putFloat(boxBeginY)
+            putFloat(boxEndX)
+            putFloat(boxEndY)
+
+        }.send()
+    }
+
+    override fun distributePixelWidth(contentAddress: String,
+                                      shareMode: ShareModeType,
+                                      pixelWidth: Int) {
+
+        SlidanetMessage(SlidanetMessageType.MoveContentRequest).apply {
+
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, shareMode.ordinal)
+            putInteger(Constants.nameWidth, pixelWidth)
+
+        }.send()
+    }
+
+    override fun logRequest(contentAddress: String, loggingType: SlidanetLoggingRequestType, requestCount: Int) {
+
+    }
+
+    override fun setShareModePix(requestId: Int,
+                                 contentAddress: String,
+                                 shareMode: ShareModeType,
+                                 boxBeginX: Float,
+                                 boxBeginY: Float,
+                                 boxEndX: Float,
+                                 boxEndY: Float,
+                                 pixWidth: Int) {
+
+        SlidanetMessage(SlidanetMessageType.SetContentShareModeRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, shareMode.ordinal)
+            putFloat(boxBeginX)
+            putFloat(boxBeginY)
+            putFloat(boxEndX)
+            putFloat(boxEndY)
+            putInteger(Constants.nameWidth, pixWidth)
+
+        }.send()
+    }
+
+    override fun setShareModePeek(requestId: Int,
+                                  contentAddress: String,
+                                  shareMode: ShareModeType,
+                                  boxBeginX: Float,
+                                  boxBeginY: Float,
+                                  boxEndX: Float,
+                                  boxEndY: Float) {
+
+        SlidanetMessage(SlidanetMessageType.SetContentShareModeRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, shareMode.ordinal)
+            putFloat(boxBeginX)
+            putFloat(boxBeginY)
+            putFloat(boxEndX)
+            putFloat(boxEndY)
+
+        }.send()
+    }
+
+    override fun setShareModeSlide(requestId: Int,
+                                   contentAddress: String,
+                                   shareMode: ShareModeType,
+                                   x: Float,
+                                   y: Float,
+                                   z: Float) {
+
+        SlidanetMessage(SlidanetMessageType.SetContentShareModeRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, shareMode.ordinal)
+            putFloat(x)
+            putFloat(y)
+            putFloat(z)
+
+        }.send()
+    }
+
+    override fun giveContentAddress(requestId: Int, contentAddress: String) {
+
+        SlidanetMessage(SlidanetMessageType.GiveContentRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+
+        }.send()
+    }
+
+    override fun takeContentAddress(requestId: Int, contentAddress: String) {
+
+        SlidanetMessage(SlidanetMessageType.TakeContentRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+
+        }.send()
+    }
+
+    override fun setVisibilityPreference(requestId: Int, contentAddress: String, preference: Int) {
+
+        SlidanetMessage(SlidanetMessageType.SetContentVisibilityPreferenceRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.nameWidth, preference)
+
+        }.send()
+    }
+
+    override fun setContentFilter(requestId: Int,
+                                  contentAddress: String,
+                                  filter: Int) {
+
+        SlidanetMessage(SlidanetMessageType.SetContentFilterRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.shortWidth, filter)
+
+        }.send()
+    }
+
+    override fun setHideState(requestId: Int, contentAddress: String, state: Boolean) {
+
+        SlidanetMessage(SlidanetMessageType.SetHideContentRequest).apply {
+
+            putInteger(Constants.integerWidth, requestId)
+            putInteger(Constants.nameWidth, contentAddress.length)
+            putString(contentAddress)
+            putInteger(Constants.flagWidth, state.toInt())
+
         }.send()
     }
 }

@@ -1,14 +1,17 @@
 package com.example.socialapp
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.DialogInterface
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 
 class FollowingSlidanetContentActivity : AppCompatActivity(),
                                          NetworkMessageHandler,
@@ -106,5 +109,11 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
     override fun refreshSlidanetContent(index: Int) {
 
         adapter.notifyItemChanged(index)
+    }
+
+    override fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout) {
+
+        findViewById<ConstraintLayout>(android.R.id.content).addView(slidanetEditorLayout)
+
     }
 }

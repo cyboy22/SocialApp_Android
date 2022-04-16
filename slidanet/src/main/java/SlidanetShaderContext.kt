@@ -23,6 +23,7 @@ internal data class SlidanetShaderContext(val shaderName: String = "DefaultShade
                                           val alpha: Float = 1f) {
 
     override fun equals(other: Any?): Boolean {
+
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
@@ -34,6 +35,7 @@ internal data class SlidanetShaderContext(val shaderName: String = "DefaultShade
     }
 
     override fun hashCode(): Int {
+
         return textureTransformMatrix.contentHashCode()
     }
 }

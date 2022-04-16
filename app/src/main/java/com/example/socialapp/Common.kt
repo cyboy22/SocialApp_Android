@@ -614,6 +614,7 @@ interface NetworkMessageHandler {
 
 interface SlidanetCallbacks {
     fun refreshSlidanetContent(index: Int)
+    fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout)
 }
 
 fun createUUID() : String {

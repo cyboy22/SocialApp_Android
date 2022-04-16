@@ -41,16 +41,19 @@ internal class SlidanetRenderer {
     init {
 
         if (eglDisplay !== EGL14.EGL_NO_DISPLAY) {
+
             throw RuntimeException("EGL already set up")
         }
 
         eglDisplay = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
         if (eglDisplay === EGL14.EGL_NO_DISPLAY) {
+
             throw RuntimeException("unable to get EGL14 display")
         }
 
         val version = IntArray(2)
         if (!EGL14.eglInitialize(eglDisplay, version, 0, version, 1)) {
+
             eglDisplay = null
             throw RuntimeException("unable to initialize EGL14")
         }
@@ -91,6 +94,11 @@ internal class SlidanetRenderer {
     internal fun removeRenderingObject(viewId: String) {
 
         slidaObjects.remove(viewId)
+    }
+
+    fun setEditorObject(editorSubject: SlidanetObject) {
+
+        editorObject = editorSubject
     }
 
     fun clearSurface() {
@@ -161,6 +169,7 @@ internal class SlidanetRenderer {
         val linkStatus = IntArray(1)
         GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0)
         if (linkStatus[0] != GLES20.GL_TRUE) {
+
             Log.e(TAG, "Could not link program: ")
             Log.e(TAG, GLES20.glGetProgramInfoLog(program))
             GLES20.glDeleteProgram(program)
@@ -203,9 +212,11 @@ internal class SlidanetRenderer {
     internal fun makeCurrent(eglSurface: android.opengl.EGLSurface) {
 
         if (eglDisplay === EGL14.EGL_NO_DISPLAY) {
+
             Log.d(TAG, "NOTE: makeCurrent w/o display")
         }
         if (!EGL14.eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+
             throw RuntimeException("eglMakeCurrent failed")
         }
     }
@@ -225,17 +236,22 @@ internal class SlidanetRenderer {
     private fun updateSlidaObjects() {
 
         for (v in slidaObjects.entries) {
+
             val slidaView = v.value
             if (slidaView.getDisplayNeedsUpdate())
+
                 if (slidaView.getTextureViewReady()) slidaView.render()
         }
 
         editorObject?.let {
+
             if (it.getDisplayNeedsUpdate())
+
                 if (it.getTextureViewReady()) it.render()
         }
 
         if (enableRendering) {
+
             Choreographer.getInstance().postFrameCallback(frameCallback)
         }
     }
@@ -246,6 +262,7 @@ internal class SlidanetRenderer {
         if (error != GLES20.GL_NO_ERROR) {
 
             when (error) {
+
                 GLES20.GL_INVALID_ENUM -> print("invalid enum")
                 GLES20.GL_INVALID_VALUE -> print("invalid value")
                 GLES20.GL_INVALID_OPERATION -> print("Invalid Operation")
@@ -255,6 +272,7 @@ internal class SlidanetRenderer {
                     print("x is neither 1 nor 2")
                 }
             }
+
             val msg = op + ": glError 0x" + Integer.toHexString(error)
             Log.e(TAG, msg)
             throw RuntimeException(msg)
@@ -264,6 +282,7 @@ internal class SlidanetRenderer {
     private fun getConfig(): EGLConfig? {
 
         val attribList = intArrayOf(
+
             EGL14.EGL_SURFACE_TYPE, EGL14.EGL_WINDOW_BIT,
             EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
             EGL14.EGL_RED_SIZE, 8,
@@ -278,6 +297,7 @@ internal class SlidanetRenderer {
         val configs = arrayOfNulls<EGLConfig>(1)
         val numConfigs = IntArray(1)
         if (!EGL14.eglChooseConfig(
+
                 eglDisplay, attribList, 0, configs, 0, configs.size,
                 numConfigs, 0
             )
@@ -296,6 +316,7 @@ internal class SlidanetRenderer {
     internal fun createWindowSurface(surface: Any): android.opengl.EGLSurface {
 
         if (surface !is Surface && surface !is SurfaceTexture) {
+
             throw RuntimeException("invalid surface: $surface")
         }
 
@@ -428,11 +449,14 @@ internal class SlidanetRenderer {
                     textureSamplerLocation = glGetUniformLocation(it, "s_texture")
                 }
 
-                SlidanetContentType.Video -> {
+                SlidanetContentType.StaticVideo -> {
 
                     if (shaderContext.videoIsRunning) {
+
                         textureSamplerLocation = glGetUniformLocation(it, "external_texture")
+
                     } else {
+
                         textureSamplerLocation = glGetUniformLocation(it, "s_texture")
                     }
                 }

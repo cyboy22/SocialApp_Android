@@ -58,11 +58,14 @@ val Activity.screenSizeInDp: Point
     get() {
 
         val point = Point()
+
         displayMetrics.apply {
+
             val a = widthPixels
             val b = heightPixels
             point.x = (widthPixels / density).roundToInt()
             point.y = (heightPixels / density).roundToInt()
+
         }
 
         return point

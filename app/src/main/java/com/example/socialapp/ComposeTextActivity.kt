@@ -26,11 +26,10 @@ class ComposeTextActivity : AppCompatActivity(),
         actionBar?.hide()
 
         setContentView(R.layout.activity_compose_text)
-
         initializeButtons()
-
         editText = findViewById(R.id.editText)
         SocialApp.networkMessageHandler = this
+
     }
 
     private fun initializeButtons() {
@@ -39,13 +38,17 @@ class ComposeTextActivity : AppCompatActivity(),
         doneButton.setOnClickListener(this)
         cancelButton = findViewById(R.id.cancelButton)
         cancelButton.setOnClickListener(this)
+
     }
 
     override fun onClick(p0: View?) {
 
         if (p0 == doneButton) {
+
             doneButtonClicked()
+
         } else if (p0 == cancelButton) {
+
             cancelButtonClicked()
         }
     }
@@ -53,9 +56,9 @@ class ComposeTextActivity : AppCompatActivity(),
     private fun doneButtonClicked() {
 
         SocialApp.socialServer.addContentRequest(Content(contentId = "",
-                                                 contentType = ContentType.Text,
-                                                 contentOwner = "",
-                                                 text = editText.text.toString()))
+                                                         contentType = ContentType.Text,
+                                                         contentOwner = "",
+                                                         text = editText.text.toString()))
     }
 
     private fun cancelButtonClicked() {
@@ -69,6 +72,7 @@ class ComposeTextActivity : AppCompatActivity(),
         this.let {
 
             AlertDialog.Builder(this).apply {
+
                 setMessage(message)
                 setTitle("Social App")
                 setPositiveButton("OK", DialogInterface.OnClickListener { _, _ ->
@@ -79,6 +83,7 @@ class ComposeTextActivity : AppCompatActivity(),
     }
 
     override fun networkAlert(message: String) {
+
         alert(message)
     }
 

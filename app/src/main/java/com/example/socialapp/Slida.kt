@@ -13,18 +13,22 @@ class Slida: SlidanetResponseHandler {
         when (responseData.requestCode) {
 
             SlidanetRequestType.Connect -> {
+
                 handleConnectToSlidanetResponse(responseData)
             }
 
             SlidanetRequestType.Disconnect -> {
+
                 handleDisconnectFromSlidanetResponse(responseData)
             }
 
             SlidanetRequestType.ConnectContent -> {
+
                 handleConnectToViewResponse(responseData)
             }
 
             SlidanetRequestType.EditContent -> {
+
                 handleEditViewResponse(responseData)
             }
 
@@ -37,7 +41,9 @@ class Slida: SlidanetResponseHandler {
         when (slidanetResponseData.responseCode) {
 
             SlidanetResponseType.ConnectionAuthenticated -> {
+
                 if (SocialApp.activityTracker == ActivityTracker.OwnSlidanetContent) {
+
                     SocialApp.networkMessageHandler.refreshContent()
                 }
             }
@@ -53,6 +59,7 @@ class Slida: SlidanetResponseHandler {
             SlidanetResponseType.Disconnected -> {
 
                 if (SocialApp.activityTracker == ActivityTracker.OwnLegacyContent) {
+
                     SocialApp.networkMessageHandler.refreshContent()
                 }
             }
@@ -68,7 +75,7 @@ class Slida: SlidanetResponseHandler {
             SlidanetResponseType.AppContentConnectedToSlidanetAddress -> {
 
                 val requestData = slidanetResponseData.requestInfo
-                val viewId = requestData.getString(SlidanetConstants.content_address)
+                val viewId = requestData.getString(SlidanetConstants.slidanet_content_address)
 
                 for (content in SocialApp.socialContent) {
 
@@ -76,13 +83,15 @@ class Slida: SlidanetResponseHandler {
 
                         content.objectWidth = requestData.getInt(SlidanetConstants.object_width)
                         content.objectHeight = requestData.getInt(SlidanetConstants.object_height)
-                        SocialApp.slidanetViews[viewId] = (slidanetResponseData.slidanetView)!!
+                        SocialApp.slidanetViews[viewId] = (slidanetResponseData.slidanetContentContainer)!!
                         val index = SocialApp.socialContent.indexOfFirst {
+
                             it.slidanetContentAddress == viewId
                         }
+
                         if (SocialApp.activityTracker == ActivityTracker.OwnSlidanetContent ||
-                            SocialApp.activityTracker == ActivityTracker.FollowingSlidanetContent
-                        ) {
+                            SocialApp.activityTracker == ActivityTracker.FollowingSlidanetContent) {
+
                             SocialApp.slidanetCallbacks.refreshSlidanetContent(index)
                         }
                     }

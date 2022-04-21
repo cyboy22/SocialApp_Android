@@ -323,7 +323,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                         if (!ownerObject.getUpdateDuringEdit()) {
 
                             val request = JSONObject()
-                            request.put(SlidanetConstants.content_address, Slidanet.editorContentAddress)
+                            request.put(SlidanetConstants.slidanet_content_address, Slidanet.editorContentAddress)
                             val response = SlidanetResponseData(requestCode = SlidanetRequestType.EditContent,
                                                                 requestInfo = request,
                                                                 responseCode = SlidanetResponseType.DoneEditingContentAddress)
@@ -336,7 +336,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                             Slidanet.contentInEditor?.let { editedContent ->
 
                                 Slidanet.server.logRequest(editedContent.getContentAddress(),
-                                                            SlidanetLoggingRequestType.move,
+                                                            SlidanetLoggingRequestType.Move,
                                                             editedContent.getMoveCount())
                                 editedContent.setMoveCount(0)
                             }
@@ -377,7 +377,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                             Slidanet.requestId++
                             val request = JSONObject()
-                            request.put(SlidanetConstants.content_address, followerObject.getContentWasTaken())
+                            request.put(SlidanetConstants.slidanet_content_address, followerObject.getContentWasTaken())
                             Slidanet.requests[Slidanet.requestId] = SlidanetResponseData(SlidanetRequestType.TakeContent,
                                                                                          request,
                                                                                          SlidanetResponseType.Undefined)

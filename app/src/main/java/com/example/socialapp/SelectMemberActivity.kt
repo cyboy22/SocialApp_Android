@@ -28,15 +28,15 @@ class SelectMemberActivity : AppCompatActivity(),
         actionBar?.hide()
 
         SocialApp.applicationContext.let {
+
             createLayout()
 
-            memberNameField = SocialApp.createEditableTextField(
-                it,
-                SocialApp.screenWidth,
-                Constants.usernameEditTextHeight,
-                Constants.memberNamePlaceholder,
-                Color.WHITE,
-                this
+            memberNameField = SocialApp.createEditableTextField(it,
+                                                                SocialApp.screenWidth,
+                                                                Constants.usernameEditTextHeight,
+                                                                Constants.memberNamePlaceholder,
+                                                                Color.WHITE,
+                                                        this
             )
         }
 
@@ -44,6 +44,7 @@ class SelectMemberActivity : AppCompatActivity(),
         SocialApp.activityTracker = ActivityTracker.SelectMember
 
         memberNameField?.let {
+
             layoutContainer?.addView(it)
         }
     }
@@ -53,7 +54,9 @@ class SelectMemberActivity : AppCompatActivity(),
         super.onResume()
 
         SocialApp.networkMessageHandler = this
+
         if (!SocialApp.connectedToServer) {
+
             SocialApp.socialServer = SocialServer()
             SocialApp.receiveMessageHandler.post { SocialApp.socialServer.connect() }
         }
@@ -74,8 +77,9 @@ class SelectMemberActivity : AppCompatActivity(),
     private fun createLayout() {
 
         layoutContainer = RelativeLayout(this)
+
         val containerLayoutParams: RelativeLayout.LayoutParams
-                = RelativeLayout.LayoutParams(
+        = RelativeLayout.LayoutParams(
             RelativeLayout.LayoutParams.MATCH_PARENT,
             RelativeLayout.LayoutParams.MATCH_PARENT)
         layoutContainer?.layoutParams = containerLayoutParams
@@ -87,18 +91,29 @@ class SelectMemberActivity : AppCompatActivity(),
     override fun onEditorAction(p0: TextView?, p1: Int, p2: KeyEvent?): Boolean {
 
         if (p0 == memberNameField) {
+
             if (p0?.text != null) {
+
                 if (p0.text.contains(" ")) {
+
                     alert(Constants.spacesNotAllowed)
                     p0.text = ""
+
                 } else if (p0.text.isEmpty()) {
+
                     alert(Constants.usernameIsEmpty)
+
                 } else if (!SocialApp.isLettersOrDigits(p0.text.toString())) {
+
                     alert(Constants.usernameMustBeAlphanumeric)
+
                 } else {
+
                     p0.text.toString().let {
+
                         it.lowercase()
                         SocialApp.sendMessageHandler.post {
+
                             SocialApp.socialServer.followMemberRequest(it)
                         }
                     }
@@ -114,6 +129,7 @@ class SelectMemberActivity : AppCompatActivity(),
         this.let {
 
             AlertDialog.Builder(this).apply {
+
                 setMessage(message)
                 setTitle("Social App")
                 setPositiveButton("OK", DialogInterface.OnClickListener { _, _ ->

@@ -30,9 +30,7 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
 
         supportActionBar?.hide()
         actionBar?.hide()
-
         initializeButtons()
-
         setContentView(R.layout.activity_following_slidanet_content)
         SocialApp.networkMessageHandler = this
         SocialApp.slidanetCallbacks = this
@@ -42,6 +40,7 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
         adapter = FollowingSlidanetContentAdapter()
         recyclerView.adapter = adapter
         adapter.notifyDataSetChanged()
+
     }
 
     override fun onResume() {
@@ -49,7 +48,9 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
         super.onResume()
 
         SocialApp.networkMessageHandler = this
+
         if (!SocialApp.connectedToServer) {
+
             SocialApp.socialServer = SocialServer()
             SocialApp.receiveMessageHandler.post { SocialApp.socialServer.connect() }
         }
@@ -72,8 +73,11 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
     override fun onClick(p0: View?) {
 
         if (p0 == unfollowButton) {
+
             unfollowButtonClicked()
+
         } else if (p0 == legacyButton) {
+
             legacyButtonClicked()
         }
     }

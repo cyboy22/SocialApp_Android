@@ -8,12 +8,14 @@ internal class SlidanetBorder(color: Int, width: Int) : Drawable() {
     private var boundsRect: Rect? = null
 
     init {
+
         paint.color = color
         paint.strokeWidth = width.toFloat()
         paint.style = Paint.Style.STROKE
     }
 
     override fun draw(p0: Canvas) {
+
         boundsRect?.let {  p0.drawRect(it, paint) }
     }
 
@@ -24,10 +26,12 @@ internal class SlidanetBorder(color: Int, width: Int) : Drawable() {
     }
 
     override fun getOpacity(): Int {
+
         return PixelFormat.OPAQUE
     }
 
     fun setDottedLine() {
+
         paint.pathEffect = DashPathEffect(floatArrayOf(5f, 10f), 0.0F)
     }
 }

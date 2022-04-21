@@ -112,21 +112,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
                 SocialApp.socialServer.getContentListingRequest()
             }
         }
-
-        if (!Slidanet.isConnected()) {
-
-            val response = Slidanet.connect(
-                applicationName = SocialApp.slidanetApplicationName,
-                applicationPassword = SocialApp.slidanetApplicationPassword,
-                slidaName = SocialApp.slidanetName,
-                ipAddress = SocialApp.slidanetServiceIpAddress,
-                ipPort = SocialApp.slidanetServiceIpPort,
-                applicationContext = SocialApp.applicationContext,
-                screenWidthInPixels = (SocialApp.screenWidth * SocialApp.density).toInt(),
-                screenHeightInPixels = (SocialApp.screenHeight * SocialApp.density).toInt(),
-                responseHandler = SocialApp.slida
-            )
-        }
     }
 
     override fun switchActivity(tracker: ActivityTracker) {

@@ -5,6 +5,7 @@ import SlidanetContentType
 import SlidanetResponseType
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,13 +20,13 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
     class ImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         private val textView: TextView = TextView(SocialApp.applicationContext)
-        private lateinit var slidanetView: ConstraintLayout
+        private lateinit var slidanetContentContainer: ConstraintLayout
 
         fun bind(content: Content) {
 
             textView.text = content.text
             textView.id = View.generateViewId()
-            slidanetView = SocialApp.slidanetViews[content.slidanetContentAddress]!!
+            slidanetContentContainer = SocialApp.slidanetViews[content.slidanetContentAddress]!!
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
@@ -36,16 +37,16 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             val constraintSet = ConstraintSet()
             constraintSet.clone(constraintLayout)
-            slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectDisplayWidth, objectDisplayHeight)
+            slidanetContentContainer.layoutParams = ConstraintLayout.LayoutParams(objectDisplayWidth, objectDisplayHeight)
             textView.layoutParams = ConstraintLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                                                   ViewGroup.LayoutParams.WRAP_CONTENT)
-            constraintSet.connect(slidanetView.id, ConstraintSet.TOP, itemView.id, ConstraintSet.TOP, 0)
-            constraintSet.connect(slidanetView.id, ConstraintSet.LEFT, itemView.id, ConstraintSet.LEFT, 0)
+            constraintSet.connect(slidanetContentContainer.id, ConstraintSet.TOP, itemView.id, ConstraintSet.TOP, 0)
+            constraintSet.connect(slidanetContentContainer.id, ConstraintSet.LEFT, itemView.id, ConstraintSet.LEFT, 0)
             constraintSet.connect(textView.id, ConstraintSet.LEFT, itemView.id, ConstraintSet.LEFT, 0)
-            constraintSet.connect(textView.id, ConstraintSet.TOP, slidanetView.id, ConstraintSet.BOTTOM, 10)
+            constraintSet.connect(textView.id, ConstraintSet.TOP, slidanetContentContainer.id, ConstraintSet.BOTTOM, 10)
             constraintSet.applyTo(constraintLayout)
 
-            itemView.addView(slidanetView)
+            itemView.addView(slidanetContentContainer)
             itemView.addView(textView)
         }
     }
@@ -60,14 +61,15 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
-            val aspectRatio = objectWidth.toFloat() / objectHeight.toFloat()
-            val objectDisplayHeight = (SocialApp.screenHeight / Constants.rowSizeScaling).toInt()
-            val objectDisplayWidth = (objectDisplayHeight * aspectRatio).toInt()
+            //val aspectRatio = objectWidth.toFloat() / objectHeight.toFloat()
+            //val objectDisplayHeight = (SocialApp.screenHeight / Constants.rowSizeScaling).toInt()
+            //val objectDisplayWidth = (objectDisplayHeight * aspectRatio).toInt()
             val constraintLayout: ConstraintLayout = itemView as ConstraintLayout
 
             val constraintSet = ConstraintSet()
             constraintSet.clone(constraintLayout)
-            slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectDisplayWidth, objectDisplayHeight)
+            slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectWidth, objectHeight)
+            //slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectDisplayWidth, objectDisplayHeight)
             constraintSet.connect(slidanetView.id, ConstraintSet.TOP, itemView.id, ConstraintSet.TOP, 0)
             constraintSet.connect(slidanetView.id, ConstraintSet.LEFT, itemView.id, ConstraintSet.LEFT, 0)
             constraintSet.applyTo(constraintLayout)
@@ -109,22 +111,26 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
                 ContentType.Video.ordinal -> (holder as ImageViewHolder).bind(content)
                 ContentType.Text.ordinal -> (holder as TextViewHolder).bind(content)
             }
+
         } ?: kotlin.run {
 
-            val path = File(ContextWrapper(SocialApp.applicationContext).getDir(Constants.contentDirectory,
-                                                                                Context.MODE_PRIVATE), content.contentId).absolutePath
+            if (Slidanet.isConnected()) {
 
-            when (Slidanet.connectContent(slidanetContentAddress = content.slidanetContentAddress,
-                                          appContentPath = path)) {
+                val path = File(ContextWrapper(SocialApp.applicationContext).getDir(Constants.contentDirectory,
+                    Context.MODE_PRIVATE), content.contentId).absolutePath
 
-                SlidanetResponseType.RequestSubmitted -> {
+                when (Slidanet.connectContent(slidanetContentAddress = content.slidanetContentAddress,
+                                              appContentPath = path)) {
 
-                    val sr = "Looks Good"
+                    SlidanetResponseType.RequestSubmitted -> {
+
+                        val sr = "Looks Good"
+                    }
+
+
+                    else -> {}
                 }
-
-                else -> {}
             }
-
         }
     }
 

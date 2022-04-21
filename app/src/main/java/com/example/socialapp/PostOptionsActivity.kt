@@ -29,10 +29,15 @@ class PostOptionsActivity : AppCompatActivity(),
     override fun onClick(p0: View?) {
 
         if (p0 == selectImageButton) {
+
             selectImageButtonClicked()
+
         } else if (p0 == selectVideoButton) {
+
             selectVideoButtonClicked()
+
         } else if (p0 == composeTextButton) {
+
             composeTextButtonClicked()
         }
     }

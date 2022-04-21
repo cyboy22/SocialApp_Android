@@ -23,6 +23,7 @@ class SelectImageActivity : AppCompatActivity(),
         this.let {
 
             AlertDialog.Builder(this).apply {
+
                 setMessage(message)
                 setTitle("Social App")
                 setPositiveButton("OK", DialogInterface.OnClickListener { _, _ ->

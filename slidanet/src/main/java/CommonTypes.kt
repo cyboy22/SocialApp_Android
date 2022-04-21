@@ -43,7 +43,7 @@ internal enum class SlidanetMessageType { AuthenticateConnectionRequest,
                                           AuthenticateConnectionResponse,
                                           ConnectContentRequest,
                                           ConnectContentResponse,
-                                          UpdateContentContextResponse,
+                                          UpdateContentContextRequest,
                                           MoveContentRequest,
                                           MoveContentResponse,
                                           SetContentVisibilityPreferenceRequest,
@@ -159,7 +159,7 @@ enum class SlidanetContentType { Image,
 
 internal enum class SlidanetEditingStateType { Active, InActive }
 
- internal enum class SlidanetEditingInitiatorType { DoubleTap, API, LocalShareStyleUpdate, remoteShareStyleUpdate, LocalEditing }
+ internal enum class SlidanetEditingInitiatorType { DoubleTap, LocalShareStyleUpdate, LocalEditing }
 
-internal enum class SlidanetLoggingRequestType { move }
+internal enum class SlidanetLoggingRequestType { Move }
 

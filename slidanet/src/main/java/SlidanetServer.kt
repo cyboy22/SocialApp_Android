@@ -102,7 +102,8 @@ internal class SlidanetServer(): SlidanetRequest {
                 inputStream?.readFully(messageBody)
                 mainHandler?.post { Slidanet.processServerMessage(
 
-                    SlidanetMessageType.values()[messageType], messageBody) }
+                    SlidanetMessageType.values()[messageType], messageBody)
+                }
             }
         }
 
@@ -112,6 +113,7 @@ internal class SlidanetServer(): SlidanetRequest {
     fun send(message: ByteArray) {
 
         Slidanet.sendMessageHandler.post {
+
             outputStream?.write(message)
             outputStream?.flush()
         }

@@ -38,10 +38,14 @@ enum class ActivityTracker { Register,
                              ComposeText,
                              SelectMember }
 
-enum class ContentType (val value: Int) { Image(0),
-                                          Video(1),
-                                          Text(2);
+enum class ContentType (val value: Int) {
+
+    Image(0),
+    Video(1),
+    Text(2);
+
     companion object {
+
         private val VALUES = values()
         fun getByValue(value: Int) = VALUES.firstOrNull { it.value == value }
     }
@@ -128,7 +132,7 @@ object Constants {
 
      var screenWidth: Int = 0
      var screenHeight: Int = 0
-     var density: Float = 0.0F
+     var density: Float = 0f
      lateinit var applicationContext: Context
      var activityTracker: ActivityTracker = ActivityTracker.Register
      lateinit var slidanetName: String
@@ -162,6 +166,7 @@ object Constants {
      val slida = Slida()
 
      init {
+
        serverReadThread.start()
        receiveMessageHandler = Handler(serverReadThread.looper)
        serverWriteThread.start()
@@ -182,17 +187,27 @@ object Constants {
         }
 
          activityTracker = if (memberId.isEmpty()) {
+
              ActivityTracker.Register
+
          } else if (followingName.isNotEmpty()){
+
              if (slidanetModeActive) {
+
                  ActivityTracker.FollowingSlidanetContent
+
              } else {
+
                  ActivityTracker.FollowingLegacyContent
              }
          } else {
+
              if (slidanetModeActive) {
+
                  ActivityTracker.OwnSlidanetContent
+
              } else {
+
                  ActivityTracker.OwnLegacyContent
              }
          }
@@ -252,11 +267,13 @@ object Constants {
      }
 
     fun isLettersOrDigits(chars: String): Boolean {
+
        return chars.matches("^[a-zA-Z0-9]*$".toRegex())
     }
 
 
      fun booleanToInt(b: Boolean): Int {
+
          return if (b) 1 else 0
      }
 
@@ -277,6 +294,11 @@ object Constants {
           }
        } catch (e: Exception) {
 
+           val text = e.message
+           val text2 = e.localizedMessage
+           val text3 = e.cause
+           e.printStackTrace()
+
        }
     }
 
@@ -290,10 +312,13 @@ object Constants {
     fun processAddMemberResponse(message: ByteArray) {
 
        SocialAppMessage(message).apply {
+
           requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
              when (ClientResponseType.values()[rc_it]) {
 
                 ClientResponseType.Ok -> {
+
                     memberId = requireNotNull(this.getString(Constants.uuidWidth))
                     val applicationNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
                     slidanetApplicationName = requireNotNull(this.getString(applicationNameLength))
@@ -304,12 +329,14 @@ object Constants {
                     slidanetName = requireNotNull(this.getString(Constants.uuidWidth))
 
                     sharedPreferences.edit()?.let {
+
                         it.putString(Constants.memberId, memberId)
                         it.putString(Constants.slidanetApplicationName, slidanetApplicationName)
                         it.putString(Constants.slidanetApplicationPassword, slidanetApplicationPassword)
                         it.putString(Constants.memberName, memberName)
                         it.putString(Constants.slidanetName, slidanetName)
                         it.commit()
+
                     }
 
                     activityTracker = ActivityTracker.OwnLegacyContent
@@ -317,6 +344,7 @@ object Constants {
                 }
 
                 ClientResponseType.MemberNameAlreadyExists -> {
+
                     mainHandler?.post { networkMessageHandler.networkAlert(Constants.usernameAlreadyExists) }
                 }
 
@@ -336,16 +364,22 @@ object Constants {
      fun processFollowMemberResponse(message: ByteArray) {
 
          SocialAppMessage(message).apply {
+
              requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
                  when (ClientResponseType.values()[rc_it]) {
 
                      ClientResponseType.Ok -> {
+
                          val followedMemberNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
                          followingName = requireNotNull(this.getString(followedMemberNameLength))
 
                          activityTracker = if (slidanetModeActive) {
+
                              ActivityTracker.FollowingSlidanetContent
+
                          } else {
+
                              ActivityTracker.FollowingLegacyContent
                          }
 
@@ -353,10 +387,12 @@ object Constants {
                      }
 
                      ClientResponseType.InvalidMemberName -> {
+
                          val followedMemberNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
                          val name = requireNotNull(this.getString(followedMemberNameLength))
                          val errorMessage = "could not find $name"
                          mainHandler?.post { networkMessageHandler.networkAlert(errorMessage) }
+
                      }
 
                      else -> {}
@@ -375,10 +411,13 @@ object Constants {
      fun processAuthenticateMemberResponse(message: ByteArray) {
 
          SocialAppMessage(message).apply {
+
              requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
                  when (ClientResponseType.values()[rc_it]) {
 
                      ClientResponseType.ConnectionAuthenticated -> {
+
                          val memberNameLength = requireNotNull(this.getInteger(Constants.nameWidth))
                          memberName = requireNotNull(this.getString(memberNameLength))
                          memberId = requireNotNull(this.getString(Constants.uuidWidth))
@@ -392,23 +431,42 @@ object Constants {
                          slidanetServiceIpAddress = requireNotNull(this.getString(slidanetServiceIpAddressLength))
                          slidanetServiceIpPort = requireNotNull(this.getInteger(Constants.integerWidth))
 
+
                          sharedPreferences.edit()?.let {
+
                              it.putString(Constants.memberId, memberId)
                              it.putString(Constants.slidanetApplicationName, slidanetApplicationName)
                              it.putString(Constants.slidanetApplicationPassword, slidanetApplicationPassword)
                              it.putString(Constants.memberName, memberName)
                              it.putString(Constants.slidanetName, slidanetName)
                              it.commit()
+
                          }
 
-                         mainHandler?.post { networkMessageHandler.initialize() }
+                         val response = Slidanet.connect(ipAddress = slidanetServiceIpAddress,
+                                                         ipPort = slidanetServiceIpPort,
+                                                         applicationName = slidanetApplicationName,
+                                                         applicationPassword = slidanetApplicationPassword,
+                                                         applicationContext = applicationContext,
+                                                         slidaName = slidanetName,
+                                                         screenWidthInPixels = screenWidth,
+                                                         screenHeightInPixels = screenHeight,
+                                                         responseHandler = slida)
+                         if (response != SlidanetResponseType.RequestSubmitted) {
+                             print("Error Occurred")
+                         }
+
+                         mainHandler?.post { networkMessageHandler.initialize()
+                         }
                      }
 
                      ClientResponseType.InvalidUserId -> {
+
                          mainHandler?.post { networkMessageHandler.networkAlert(Constants.invalidUserId) }
                      }
 
                      ClientResponseType.InvalidMemberNameForId -> {
+
                          mainHandler?.post { networkMessageHandler.networkAlert(Constants.invalidMemberNameForMemberId) }
                      }
 
@@ -428,26 +486,37 @@ object Constants {
      fun processGetContentListingResponse(message: ByteArray) {
 
          SocialAppMessage(message).apply {
+
              requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
                  when (ClientResponseType.values()[rc_it]) {
 
                      ClientResponseType.Ok -> {
+
                          totalContentCount = requireNotNull(this.getInteger(Constants.integerWidth))
 
                          repeat(totalContentCount) {
+
                              val contentId = requireNotNull(this.getString(Constants.uuidWidth))
                              val contentType = requireNotNull(this.getInteger(Constants.nameWidth))
+
                              if (contentType != ContentType.Text.ordinal) {
+
                                  val file = File(Environment.getDataDirectory().toString() + separator.toString() + contentId)
+
                                  if (!file.exists()) {
+
                                      socialServer.getContentRequest(contentId)
+
                                  } else {
+
                                      actualContentCount++
                                  }
                              } else {
 
                                  actualContentCount++
                              }
+
                              val contentOwnerLength = requireNotNull(this.getInteger(Constants.nameWidth))
                              val contentOwner = requireNotNull(this.getString(contentOwnerLength))
                              val slidanetContentAddressLength = requireNotNull(this.getInteger(Constants.nameWidth))
@@ -456,25 +525,32 @@ object Constants {
                              var text = ""
 
                              if (textLength > 0) {
+
                                  text = requireNotNull(this.getString(textLength))
 
                                  if (contentType == ContentType.Text.ordinal) {
+
                                      val file = File(contentId)
 
                                      val cw = ContextWrapper(applicationContext)
                                      val directory = cw.getDir(Constants.contentDirectory, Context.MODE_PRIVATE)
                                      if (!directory.exists()) {
+
                                          directory.mkdir()
                                      }
 
                                      val bitmapFile = File(directory, contentId)
 
                                      if (!bitmapFile.exists()) {
+
                                          val bitmap = Slidanet.textToImage(text,
-                                             Typeface.DEFAULT,
-                                             14.0F,Color.BLACK, Color.WHITE,
-                                             density,Constants.textIndent,
-                                             applicationContext)
+                                                                           Typeface.DEFAULT,
+                                                                   14.0F,
+                                                                           Color.BLACK,
+                                                                           Color.WHITE,
+                                                                           density,
+                                                                           Constants.textIndent,
+                                                                           applicationContext)
                                          storeImage(bitmap, contentId)
                                      }
                                  }
@@ -490,7 +566,10 @@ object Constants {
                          listingsDownloadComplete = true
 
                          if (totalContentCount == actualContentCount) {
-                             if (activityTracker != ActivityTracker.OwnSlidanetContent && activityTracker != ActivityTracker.FollowingSlidanetContent) {
+
+                             if (activityTracker != ActivityTracker.OwnSlidanetContent &&
+                                 activityTracker != ActivityTracker.FollowingSlidanetContent) {
+
                                  mainHandler?.post { networkMessageHandler.refreshContent() }
                              }
                          }
@@ -511,7 +590,9 @@ object Constants {
      fun processGetContentResponse(message: ByteArray) {
 
          SocialAppMessage(message).apply {
+
              requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
                  when (ClientResponseType.values()[rc_it]) {
 
                      ClientResponseType.Ok -> {
@@ -524,6 +605,7 @@ object Constants {
                          actualContentCount++
 
                          if (totalContentCount == actualContentCount) {
+
                              mainHandler?.post { networkMessageHandler.refreshContent() }
                          }
                      }
@@ -548,7 +630,9 @@ object Constants {
      fun processAddContentResponse(message: ByteArray) {
 
          SocialAppMessage(message).apply {
+
              requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
+
                  when (ClientResponseType.values()[rc_it]) {
 
                      ClientResponseType.Ok -> {
@@ -560,14 +644,18 @@ object Constants {
                          val slidanetContentAddress = requireNotNull(this.getString(slidanetContentAddressLength))
 
                          if (ContentType.getByValue(contentType) != ContentType.Text) {
+
                              val contextId = requireNotNull(this.getString(Constants.uuidWidth))
                              val contentPath = applicationContext.filesDir.absolutePath + "/" + contextId
                              val file = File(contentPath)
+
                              if (file.exists()) {
+
                                  val targetFile = File(applicationContext.filesDir.absolutePath + "/" + contentId)
                                  targetFile.renameTo(file)
                              }
                          } else {
+
                              val textLength = requireNotNull(this.getInteger(Constants.integerWidth))
                              text = requireNotNull(this.getString(textLength))
                          }
@@ -589,9 +677,11 @@ object Constants {
      private fun storeImage(image: Bitmap, contentId: String) {
 
          try {
+
              val cw = ContextWrapper(applicationContext)
              val directory = cw.getDir("SocialAppContent", Context.MODE_PRIVATE)
              if (!directory.exists()) {
+
                  directory.mkdir()
              }
 
@@ -599,25 +689,32 @@ object Constants {
              val fos = FileOutputStream(path);
              image.compress(Bitmap.CompressFormat.PNG, 100, fos)
              fos.close()
+
          } catch (e: java.lang.Exception) {
+
              e.printStackTrace()
          }
      }
  }
 
 interface NetworkMessageHandler {
+
     fun networkAlert(message: String)
     fun initialize()
     fun switchActivity(tracker: ActivityTracker)
     fun refreshContent()
+
 }
 
 interface SlidanetCallbacks {
+
     fun refreshSlidanetContent(index: Int)
     fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout)
+
 }
 
 fun createUUID() : String {
+
     return UUID.randomUUID().toString()
 }
 

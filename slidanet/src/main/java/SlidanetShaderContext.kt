@@ -1,6 +1,6 @@
 import java.nio.FloatBuffer
 
-internal data class SlidanetShaderContext(val shaderName: String = "DefaultShader",
+internal data class SlidanetShaderContext(val contentFilter: SlidanetContentFilterType = SlidanetContentFilterType.Default,
                                           val peekItEnabled: Boolean = false,
                                           val pixItEnabled: Boolean = false,
                                           val viewType: SlidanetContentType = SlidanetContentType.Image,

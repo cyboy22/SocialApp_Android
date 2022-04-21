@@ -1,4 +1,5 @@
 import org.json.JSONObject
+import java.nio.ShortBuffer
 
 internal interface SlidanetObject {
 
@@ -111,6 +112,6 @@ internal interface SlidanetObject {
     fun getContentFilter() : SlidanetContentFilterType
     fun getVideoPlayer() : SlidanetVideoPlayer
     fun setContentAlpha(alpha: Float)
+    fun getIndicesBuffer() : ShortBuffer
     fun restore()
-
 }

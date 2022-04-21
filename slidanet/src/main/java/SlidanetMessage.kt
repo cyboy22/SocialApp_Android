@@ -75,7 +75,6 @@ internal class SlidanetMessage {
 
             String(outputBuffer, Charset.forName("UTF-8")).apply {
                 result = this.trim().toInt()
-                print("Hello")
             }
         } else {
 

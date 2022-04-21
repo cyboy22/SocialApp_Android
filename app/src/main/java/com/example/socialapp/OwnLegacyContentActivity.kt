@@ -31,7 +31,6 @@ class OwnLegacyContentActivity : AppCompatActivity(),
 
         setContentView(R.layout.activity_own_legacy_content)
         SocialApp.networkMessageHandler = this
-
         initializeButtons()
 
         recyclerView = findViewById(R.id.legacyOwnRecyclerView)
@@ -53,10 +52,15 @@ class OwnLegacyContentActivity : AppCompatActivity(),
     override fun onClick(p0: View?) {
 
         if (p0 == postButton) {
+
             postButtonClicked()
+
         } else if (p0 == followButton) {
+
             followButtonClicked()
+
         } else if (p0 == slidanetButton) {
+
             slidanetButtonClicked()
         }
     }
@@ -94,6 +98,7 @@ class OwnLegacyContentActivity : AppCompatActivity(),
         this.let {
 
             AlertDialog.Builder(this).apply {
+
                 setMessage(message)
                 setTitle("Social App")
                 setPositiveButton("OK", DialogInterface.OnClickListener { _, _ ->
@@ -104,13 +109,16 @@ class OwnLegacyContentActivity : AppCompatActivity(),
     }
 
     override fun networkAlert(message: String) {
+
         alert(message)
     }
 
     override fun initialize() {
 
         if (!SocialApp.listingsDownloadComplete) {
+
             SocialApp.sendMessageHandler.post {
+
                 SocialApp.socialServer.getContentListingRequest()
             }
         }

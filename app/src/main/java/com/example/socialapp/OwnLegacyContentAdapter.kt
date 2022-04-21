@@ -1,5 +1,6 @@
 package com.example.socialapp
 
+import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -20,6 +21,8 @@ class OwnLegacyContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>()
 
         fun bind(contentId: String, contentText: String) {
             textView.text = contentText
+            textView.setBackgroundColor(Color.RED)
+
             // load imageView from disk file (check width/height and adjust layout parameters)
         }
     }
@@ -29,8 +32,8 @@ class OwnLegacyContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>()
         private val videoView: TextView = itemView.findViewById(R.id.legacyImageView)
         private val textView: TextView = itemView.findViewById(R.id.legacyTextView)
 
-
         fun bind(contentId: String, contentText: String) {
+
             textView.text = contentText
             // load videoView from disk file (check width/height and adjust layout parameters)
         }
@@ -41,7 +44,9 @@ class OwnLegacyContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>()
         private val textView: TextView = itemView.findViewById(R.id.legacyTextView)
 
         fun bind(contentText: String) {
+
             textView.text = contentText
+            textView.setBackgroundColor(Color.RED)
         }
     }
 

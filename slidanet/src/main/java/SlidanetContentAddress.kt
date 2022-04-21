@@ -1,9 +1,12 @@
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.SurfaceTexture
 import android.net.Uri
 import android.opengl.*
+import android.os.Build
 import android.view.*
+import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
@@ -13,12 +16,14 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import java.util.*
 
-internal class SlidanetContentAddress (private val contentAddress: String,
-                                       private var contentType: SlidanetContentType = SlidanetContentType.Image,
-                                       private var contentPath: String = "",
-                                       private var videoStartTime: Float = 0.0F,
-                                       private var editorEnabled: Boolean = false,
-                                       private var doubleTapEditingEnabled: Boolean = true) : TextureView(Slidanet.applicationContext),
+@RequiresApi(Build.VERSION_CODES.O)
+internal class SlidanetContentAddress(private val contentAddress: String,
+                                      private var contentType: SlidanetContentType = SlidanetContentType.Image,
+                                      private var contentPath: String = "",
+                                      private var videoStartTime: Float = 0.0F,
+                                      private var editorEnabled: Boolean = false,
+                                      private val contentBackgroundColor: Int = Color.WHITE,
+                                      private var doubleTapEditingEnabled: Boolean = true) : TextureView(Slidanet.applicationContext),
                                                                                               SlidanetObject,
                                                                                               SlidanetVideoManager,
                                                                                               TextureView.SurfaceTextureListener,
@@ -58,6 +63,10 @@ internal class SlidanetContentAddress (private val contentAddress: String,
     private var savedPixPercentage = 0f
     private var moveCount = 0
     private var contentWasTaken = false
+    private var backgroundRedColor = 1f
+    private var backgroundBlueColor = 1f
+    private var backgroundGreenColor = 1f
+    private var backgroundAlphaColor = 1f
 
     @Volatile private var giveEnabled = false
     @Volatile private var hideEnabled = false
@@ -77,8 +86,8 @@ internal class SlidanetContentAddress (private val contentAddress: String,
     @Volatile internal var slideEnabled = false
     @Volatile internal var peekEnabled = false
     @Volatile internal var pixEnabled = false
-    @Volatile internal var fadeBarrier = 0.1F
-    @Volatile internal var snapThreshold = 0.1F
+    @Volatile internal var fadeBarrier = .1f
+    @Volatile internal var snapThreshold = .1f
     @Volatile internal var redMaskColor = 1f
     @Volatile internal var contentAlpha = 1f
     @Volatile internal var greenMaskColor = 1f
@@ -106,6 +115,13 @@ internal class SlidanetContentAddress (private val contentAddress: String,
 
     init {
 
+        val c = Color.valueOf(contentBackgroundColor)
+
+        backgroundRedColor = c.red()
+        backgroundBlueColor = c.blue()
+        backgroundGreenColor = c.green()
+        backgroundAlphaColor = c.alpha()
+
         if (!editorEnabled) {
 
             gestureDetector.setOnDoubleTapListener(this)
@@ -123,9 +139,13 @@ internal class SlidanetContentAddress (private val contentAddress: String,
 
     override fun initializeImage() {
 
-        BitmapFactory.decodeFile(Uri.fromFile(File(contentPath)).toString())?.let {
+        BitmapFactory.decodeFile(contentPath)?.let {
 
             bmp = it
+            val flip = android.graphics.Matrix()
+            flip.postScale(1f, -1f)
+            bmp = Bitmap.createBitmap(bmp,0,0,bmp.width, bmp.height, flip,true)
+
             bitmapWidth = it.width
             bitmapHeight = it.height
         }
@@ -152,20 +172,23 @@ internal class SlidanetContentAddress (private val contentAddress: String,
     }
 
     override fun getEditingScale(): Float {
+
         return editingScale
     }
 
     override fun getEditorContentAddress(): String {
+
         return editorContentAddress
     }
 
     private fun initializeIndices() {
 
         indicesBuffer = createShortBuffer(shortArrayOf(0, 1, 2,
-            2, 3, 0))
+                                                       2, 3, 0))
     }
 
     override fun onDown(p0: MotionEvent?): Boolean {
+
         return true
     }
 
@@ -174,14 +197,17 @@ internal class SlidanetContentAddress (private val contentAddress: String,
     }
 
     override fun onSingleTapUp(p0: MotionEvent?): Boolean {
+
         return true
     }
 
     override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+
         return true
     }
 
     override fun onLongPress(p0: MotionEvent?) {
+
         return
     }
 
@@ -190,30 +216,37 @@ internal class SlidanetContentAddress (private val contentAddress: String,
     }
 
     override fun onSingleTapConfirmed(p0: MotionEvent?): Boolean {
+
         return true
     }
 
     override fun setMoveCount(count: Int) {
+
         moveCount = count
     }
 
     override fun getMoveCount() : Int {
+
         return moveCount
     }
 
     override fun incrementMoveCount() {
+
         moveCount++
     }
 
     override fun getContentFilter() : SlidanetContentFilterType {
+
         return contentFilter
     }
 
     override fun setContentFilter(contentFilter: SlidanetContentFilterType) {
+
         this.contentFilter = contentFilter
     }
 
     override fun getVideoPlayer() : SlidanetVideoPlayer {
+
         return videoPlayer
     }
 
@@ -258,7 +291,7 @@ internal class SlidanetContentAddress (private val contentAddress: String,
 
         moveCount = Slidanet.contentInEditor?.getMoveCount()!!
 
-        Slidanet.server.logRequest(contentAddress,SlidanetLoggingRequestType.move, moveCount)
+        Slidanet.server.logRequest(contentAddress,SlidanetLoggingRequestType.Move, moveCount)
 
         moveCount = 1
 
@@ -344,17 +377,7 @@ internal class SlidanetContentAddress (private val contentAddress: String,
 
     override fun onSurfaceTextureAvailable(p0: SurfaceTexture, p1: Int, p2: Int) {
 
-        val runnable = Runnable {
-            /*
-            sTexture.detachFromGLContext()
-            sTexture.release()
-            deleteTextures()
-            */
-
-            initializeSurfaceTexture(p0, p1, p2)
-        }
-
-        Slidanet.rendererHandler.post(runnable)
+        Slidanet.rendererHandler.post { initializeSurfaceTexture(p0, p1, p2) }
     }
 
     private fun initializeSurfaceTexture(surfaceTexture: SurfaceTexture, w: Int, h: Int) {
@@ -385,6 +408,7 @@ internal class SlidanetContentAddress (private val contentAddress: String,
 
         textureViewReady = true
         displayNeedsUpdate = true
+
     }
 
     override fun initializeVertices(translationX: Float, translationY: Float) {
@@ -431,11 +455,17 @@ internal class SlidanetContentAddress (private val contentAddress: String,
                     }
                     */
                     ShareModeType.SlideXYZ -> {
+/*
+                        vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, (1f - 2 * translationY)/scale,  0f, 0f, 1f,// top left
+                                                         (-1f + 2 * translationX)/scale, (-1f - 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
+                                                         (1f + 2 * translationX)/scale,  (-1f - 2 * translationY)/scale, 0f, 1f, 0f,//bottom right
+                                                         (1f + 2 * translationX)/scale,  (1f - 2 * translationY)/scale,  0f, 1f, 1f) // top right
+*/
+                        vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, (1f + 2 * translationY)/scale,  0f, 0f, 1f,// top left
+                                                         (-1f + 2 * translationX)/scale, (-1f + 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
+                                                         (1f + 2 * translationX)/scale,  (-1f + 2 * translationY)/scale, 0f, 1f, 0f,//bottom right
+                                                         (1f + 2 * translationX)/scale,  (1f + 2 * translationY)/scale,  0f, 1f, 1f) // top right
 
-                        vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/editingScale, (1f - 2 * translationY)/editingScale,  0f, 0f, 1f,// top left
-                                                         (-1f + 2 * translationX)/editingScale, (-1f - 2 * translationY)/editingScale, 0f, 0f, 0f,// bottom left
-                                                         (1f + 2 * translationX)/editingScale,  (-1f - 2 * translationY)/editingScale, 0f, 1f, 0f,//bottom right
-                                                         (1f + 2 * translationX)/editingScale,  (1f - 2 * translationY)/editingScale,  0f, 1f, 1f) // top right
                     }
 
                     else -> {}
@@ -484,23 +514,23 @@ internal class SlidanetContentAddress (private val contentAddress: String,
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
 
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-            GLES20.GL_TEXTURE_MIN_FILTER,
-            GLES20.GL_LINEAR.toFloat())
+                              GLES20.GL_TEXTURE_MIN_FILTER,
+                              GLES20.GL_LINEAR.toFloat())
         Slidanet.renderer.checkGlError("MIN Texture Filter")
 
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-            GLES20.GL_TEXTURE_MAG_FILTER,
-            GLES20.GL_LINEAR.toFloat())
+                               GLES20.GL_TEXTURE_MAG_FILTER,
+                               GLES20.GL_LINEAR.toFloat())
         Slidanet.renderer.checkGlError("MAG Texture Filter")
 
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-            GLES20.GL_TEXTURE_WRAP_S,
-            GLES20.GL_CLAMP_TO_EDGE.toFloat())
+                               GLES20.GL_TEXTURE_WRAP_S,
+                               GLES20.GL_CLAMP_TO_EDGE.toFloat())
         Slidanet.renderer.checkGlError("Texture Clamp To Edge S")
 
         GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
-            GLES20.GL_TEXTURE_WRAP_T,
-            GLES20.GL_CLAMP_TO_EDGE.toFloat())
+                               GLES20.GL_TEXTURE_WRAP_T,
+                               GLES20.GL_CLAMP_TO_EDGE.toFloat())
         Slidanet.renderer.checkGlError("Texture Clamp To Edge T")
 
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0)
@@ -755,7 +785,7 @@ internal class SlidanetContentAddress (private val contentAddress: String,
         if (initiator == SlidanetEditingInitiatorType.DoubleTap || initiator == SlidanetEditingInitiatorType.LocalEditing) {
 
             val request = JSONObject()
-            request.put(SlidanetConstants.content_address, editorContentAddress)
+            request.put(SlidanetConstants.slidanet_content_address, editorContentAddress)
             val response = SlidanetResponseData(requestCode = SlidanetRequestType.EditContent,
                                                 requestInfo = request,
                                                 responseCode = SlidanetResponseType.EditingContent,
@@ -1122,12 +1152,23 @@ internal class SlidanetContentAddress (private val contentAddress: String,
 
         return pixelWidth
     }
+
+    override fun getIndicesBuffer() : ShortBuffer {
+
+        return indicesBuffer
+    }
+
     override fun render() {
 
         Slidanet.renderer.apply {
 
             makeCurrent(windowSurface)
+            this.setContentBackgroundColor(backgroundRedColor,
+                                           backgroundBlueColor,
+                                           backgroundGreenColor,
+                                           backgroundAlphaColor)
             this.clearSurface()
+
             this.setViewport(textureWidth, textureHeight)
             /*
             if (viewType == SlidaViewType.Text) {
@@ -1164,7 +1205,7 @@ internal class SlidanetContentAddress (private val contentAddress: String,
                 activateTexture(GLES20.GL_TEXTURE_2D, textureId)
             }
 
-            loadShader(SlidanetShaderContext(shaderName = shaderName,
+            loadShader(SlidanetShaderContext(contentFilter = contentFilter,
                                              verticesBuffer = vertexBuffer,
                                              boxBeginX = boxBeginX,
                                              boxBeginY = boxBeginY,

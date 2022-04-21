@@ -3,6 +3,7 @@ import android.graphics.SurfaceTexture
 import android.opengl.*
 import android.opengl.GLES20.glGetUniformLocation
 import android.opengl.GLES20.glUniform1i
+import android.opengl.GLES20.glDrawElements
 import android.util.Log
 import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
@@ -25,16 +26,35 @@ internal class SlidanetRenderer {
         private const val DEFAULT_SURFACE_HEIGHT = 10
     }
 
+    private val DEFAULT_VERTEX_SHADER = "attribute mediump vec3 a_position;\n" +
+            "attribute mediump vec2 a_texcoord;\n" +
+            "varying vec2 v_texcoord;\n" +
+            "void main()\n" +
+            "{\n" +
+            "   gl_Position = vec4(a_position, 1.0);\n" +
+            "   v_texcoord = a_texcoord;\n" +
+            "}\n"
+
+    private val DEFAULT_FRAGMENT_SHADER = "#extension GL_OES_EGL_image_external : require\n" +
+            "precision mediump float;" +
+            "uniform sampler2D s_texture;\n" +
+            "varying vec2 v_texcoord;\n" +
+            "void main() {" +
+            "   vec4 textureColor = texture2D(s_texture, v_texcoord);\n" +
+            "   gl_FragColor = vec4(textureColor.r, textureColor.g, textureColor.b, textureColor.a);" +
+            "}"
+
     private val TAG = "Slidanet Renderer"
     private val frameCallback: Choreographer.FrameCallback = Choreographer.FrameCallback { updateSlidaObjects() }
     private var eglDisplay: EGLDisplay? = EGL14.EGL_NO_DISPLAY
     private var eglContext = EGL14.EGL_NO_CONTEXT
     private lateinit var eglConfig: EGLConfig
-    private val shaders = mutableMapOf<String, Int>()
+    private val shaders = mutableMapOf<SlidanetContentFilterType, Int>()
+
     private lateinit var defaultSurface: EGLSurface
     private var positionHandle = 0
     private var textureCoordinatesHandle = 0
-    private val slidaObjects = mutableMapOf<String, SlidanetObject>()
+    internal val slidaObjects = mutableMapOf<String, SlidanetObject>()
     private var editorObject: SlidanetObject? = null
     private var enableRendering = false
 
@@ -99,6 +119,14 @@ internal class SlidanetRenderer {
     fun setEditorObject(editorSubject: SlidanetObject) {
 
         editorObject = editorSubject
+    }
+
+    fun setContentBackgroundColor(r: Float,
+                                  b: Float,
+                                  g: Float,
+                                  a: Float) {
+
+        GLES20.glClearColor(r ,g, b, a)
     }
 
     fun clearSurface() {
@@ -180,11 +208,19 @@ internal class SlidanetRenderer {
 
     private fun initializeShaders() {
 
+        //val defaultVertexShader = DEFAULT_VERTEX_SHADER
+        //val defaultFragmentShader = DEFAULT_FRAGMENT_SHADER
+
+
         val defaultVertexShader = getRawResource(R.raw.default_vertex_shader)
         val defaultFragmentShader = getRawResource(R.raw.default_fragment_shader)
 
+        //val shaderProgram = createProgram(defaultVertexShader, defaultFragmentShader)
+
         val shaderProgram = createProgram(defaultVertexShader!!, defaultFragmentShader!!)
-        if (shaderProgram > 0) {  shaders += Pair("DefaultShader", shaderProgram) }
+        //if (shaderProgram > 0) {  shaders += Pair("DefaultShader", shaderProgram) }
+        if (shaderProgram > 0) {  shaders += Pair(SlidanetContentFilterType.Default, shaderProgram) }
+
     }
 
     private fun createOffscreenSurface(): EGLSurface {
@@ -263,11 +299,26 @@ internal class SlidanetRenderer {
 
             when (error) {
 
-                GLES20.GL_INVALID_ENUM -> print("invalid enum")
-                GLES20.GL_INVALID_VALUE -> print("invalid value")
-                GLES20.GL_INVALID_OPERATION -> print("Invalid Operation")
-                GLES20.GL_INVALID_FRAMEBUFFER_OPERATION -> print("Invalid Frame Buffer Operation")
-                GLES20.GL_OUT_OF_MEMORY -> print("Out Of Memory")
+                GLES20.GL_INVALID_ENUM ->  {
+                    print("invalid enum")
+                }
+
+                GLES20.GL_INVALID_VALUE -> {
+                    print("invalid value")
+                }
+
+                GLES20.GL_INVALID_OPERATION -> {
+                    print("Invalid Operation")
+                }
+
+                GLES20.GL_INVALID_FRAMEBUFFER_OPERATION -> {
+                    print("Invalid Frame Buffer Operation")
+                }
+
+                GLES20.GL_OUT_OF_MEMORY -> {
+                    print("Out Of Memory")
+                }
+
                 else -> { // Note the block
                     print("x is neither 1 nor 2")
                 }
@@ -342,8 +393,10 @@ internal class SlidanetRenderer {
 
     fun drawElements(indexBuffer: ShortBuffer, indexCount: Int) {
 
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, indexCount, GLES20.GL_UNSIGNED_SHORT, indexBuffer)
-        checkGlError("glDrawArrays ")
+        //glDrawElements(GLES20.GL_TRIANGLES, indexCount, GLES20.GL_UNSIGNED_SHORT, indexBuffer)
+        glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, indexBuffer)
+
+        checkGlError("glDrawElements ")
 
         GLES20.glDisableVertexAttribArray(positionHandle)
         GLES20.glDisableVertexAttribArray(textureCoordinatesHandle)
@@ -356,7 +409,7 @@ internal class SlidanetRenderer {
 
     fun loadShader(shaderContext: SlidanetShaderContext) {
 
-        shaders[shaderContext.shaderName]?.let {
+        shaders[shaderContext.contentFilter]?.let {
 
             GLES20.glUseProgram(it)
             checkGlError("glUseProgram")
@@ -389,6 +442,7 @@ internal class SlidanetRenderer {
                                         false,
                                          vertexStride,
                                          shaderContext.verticesBuffer)
+
 
             val videoRunningLocation = glGetUniformLocation(it, "video_running")
             glUniform1i(videoRunningLocation, shaderContext.videoIsRunning.toInt())

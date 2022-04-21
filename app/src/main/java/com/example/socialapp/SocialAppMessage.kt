@@ -18,6 +18,7 @@ class SocialAppMessage {
     }
 
     constructor(data: ByteArray) {
+
         readBody = ByteArrayInputStream(data)
     }
 
@@ -27,6 +28,7 @@ class SocialAppMessage {
     fun putString(value: String) {
 
         value.toByteArray(Charset.forName("UTF-8")).apply {
+
             writeBody.write(this, 0, this.size)
             messageSize += this.size
         }
@@ -35,7 +37,9 @@ class SocialAppMessage {
     fun putInteger(width: Int, value: Int) {
 
         String.format("%" + width.toString() + "d", value).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
+
                 writeBody.write(it, 0, it.size)
                 messageSize += it.size
             }
@@ -45,7 +49,9 @@ class SocialAppMessage {
     fun putFloat(value: Float) {
 
         String.format(SocialApp.locale, "-%10.3f", value).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
+
                 writeBody.write(it, 0, it.size)
                 messageSize += it.size
             }
@@ -68,9 +74,12 @@ class SocialAppMessage {
 
         val outputBuffer = ByteArray(width)
         if (readBody?.read(outputBuffer, 0, width) == width) {
+
             String(outputBuffer, Charset.forName("UTF-8")).apply {
+
                 result = this.trim().toInt()
                 print("Hello")
+
             }
         } else {
             result = null
@@ -88,8 +97,11 @@ class SocialAppMessage {
 
         val outputBuffer = ByteArray(length)
         if (readBody?.read(outputBuffer, 0, length) == length) {
+
             result = String(outputBuffer, Charset.forName("UTF-8"))
+
         } else {
+
             result = null
         }
 
@@ -102,8 +114,11 @@ class SocialAppMessage {
         var result: Float?
 
         val outputBuffer = ByteArray(Constants.floatWidth)
+
         if (readBody?.read(outputBuffer, 0, Constants.floatWidth) == Constants.floatWidth) {
+
             String(outputBuffer, Charset.forName("UTF-8")).apply {
+
                 result = this.toFloat()
             }
         } else {
@@ -143,18 +158,21 @@ class SocialAppMessage {
         val message = ByteArrayOutputStream()
 
         String.format("%" + Constants.networkMessageSizeLength.toString() + "d", messageSize).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
                 message.write(it, 0, it.size)
             }
         }
 
         String.format("%" + Constants.networkMessageTypeLength.toString() + "d", messageType.ordinal).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
                 message.write(it, 0, it.size)
             }
         }
 
         writeBody.toByteArray().let {
+
             message.write(it, 0, it.size)
         }
 

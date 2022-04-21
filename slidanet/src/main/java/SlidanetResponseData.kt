@@ -7,5 +7,5 @@ public data class SlidanetResponseData(val requestCode: SlidanetRequestType,
                                        var responseCode: SlidanetResponseType,
                                        val responseInfo: JSONObject? = null,
                                        val applicationContext: Context? = null,
-                                       var slidanetView: ConstraintLayout? = null,
+                                       var slidanetContentContainer: ConstraintLayout? = null,
                                        val editorView: ConstraintLayout? = null)

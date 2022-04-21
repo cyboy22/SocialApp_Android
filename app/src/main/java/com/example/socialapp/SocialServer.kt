@@ -38,14 +38,17 @@ class SocialServer {
             processSession()
 
         } catch (e: Exception) {
+
             sslSocket?.close()
             e.message?.let { Log.d(TAG, it) }
         }
     }
 
     fun disconnect() {
+
         sslSocket?.close()
         SocialApp.mainHandler?.post {
+
             SocialApp.connectedToServer = false
         }
     }
@@ -74,7 +77,8 @@ class SocialServer {
         val sslContext = SSLContext.getInstance("TLS")
         sslContext.init(keyManagerFactory.keyManagers, tmf.trustManagers, SecureRandom())
 
-        sslSocket = sslContext.socketFactory.createSocket(Constants.serverIpAddress, Constants.serverIpPort) as SSLSocket
+        sslSocket = sslContext.socketFactory.createSocket(Constants.serverIpAddress,
+                                                          Constants.serverIpPort) as SSLSocket
         sslSocket?.startHandshake()
         inputStream = DataInputStream(sslSocket?.inputStream)
         outputStream = DataOutputStream(sslSocket?.outputStream)
@@ -82,6 +86,7 @@ class SocialServer {
         connected = true
 
         SocialApp.mainHandler?.post {
+
             SocialApp.connectedToServer = connected
             SocialApp.socialServer.authenticateMemberRequest()
         }
@@ -100,7 +105,9 @@ class SocialServer {
             val messageHeader = ByteArray(Constants.networkMessageHeaderLength)
 
             inputStream?.readFully(messageHeader)
+
             SocialAppMessage(messageHeader).let {
+
                 val messageLength = requireNotNull(it.getInteger(Constants.integerWidth))
                 val messageType = requireNotNull(it.getInteger(Constants.shortWidth))
                 val messageBody = ByteArray(messageLength)
@@ -116,60 +123,75 @@ class SocialServer {
     fun addMemberRequest(memberName: String) {
 
         SocialAppMessage(MessageType.AddMemberRequest).apply {
+
             putInteger(Constants.nameWidth, memberName.length)
             putString(memberName)
+
         }.send()
     }
 
     fun followMemberRequest(memberName: String) {
 
         SocialAppMessage(MessageType.FollowMemberRequest).apply {
+
             putInteger(Constants.nameWidth, memberName.length)
             putString(memberName)
+
         }.send()
     }
 
     fun authenticateMemberRequest() {
 
         SocialAppMessage(MessageType.AuthenticateMemberRequest).apply {
+
             putInteger(Constants.nameWidth, SocialApp.memberName.length)
             putString(SocialApp.memberName)
             putString(SocialApp.memberId)
             putInteger(Constants.flagWidth, SocialApp.booleanToInt(SocialApp.slidanetModeActive))
+
         }.send()
     }
 
     fun getContentListingRequest() {
 
         SocialAppMessage(MessageType.GetContentListingRequest).apply {
+
             putInteger(Constants.nameWidth, SocialApp.memberName.length)
             putString(SocialApp.memberName)
+
         }.send()
     }
 
     fun getContentRequest(contentId: String) {
 
         SocialAppMessage(MessageType.GetContentRequest).apply {
+
             putString(contentId)
+
         }.send()
     }
 
     fun addContentRequest(content: Content) {
 
         SocialAppMessage(MessageType.AddContentRequest).apply {
+
             putInteger(Constants.nameWidth, content.contentType.ordinal)
             when (content.contentType) {
+
                 ContentType.Text -> { putInteger(Constants.integerWidth, content.text.length)
                                       putString(content.text) }
                 else -> {}
             }
+
         }.send()
     }
 
     fun send(message: ByteArray) {
 
         SocialApp.sendMessageHandler.post{
+
             outputStream?.write(message)
-            outputStream?.flush() }
+            outputStream?.flush()
+        }
     }
 }

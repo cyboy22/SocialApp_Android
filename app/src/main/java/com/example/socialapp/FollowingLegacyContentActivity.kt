@@ -31,7 +31,9 @@ class FollowingLegacyContentActivity : AppCompatActivity(),
         super.onResume()
 
         SocialApp.networkMessageHandler = this
+
         if (!SocialApp.connectedToServer) {
+
             SocialApp.socialServer = SocialServer()
             SocialApp.receiveMessageHandler.post { SocialApp.socialServer.connect() }
         }
@@ -56,8 +58,11 @@ class FollowingLegacyContentActivity : AppCompatActivity(),
     override fun onClick(p0: View?) {
 
         if (p0 == unfollowButton) {
+
             unfollowButtonClicked()
+
         } else if (p0 == slidanetButton) {
+
             slidanetButtonClicked()
         }
     }
@@ -67,6 +72,7 @@ class FollowingLegacyContentActivity : AppCompatActivity(),
         this.let {
 
             AlertDialog.Builder(this).apply {
+
                 setMessage(message)
                 setTitle("Social App")
                 setPositiveButton("OK", DialogInterface.OnClickListener { _, _ ->
@@ -77,6 +83,7 @@ class FollowingLegacyContentActivity : AppCompatActivity(),
     }
 
     override fun networkAlert(message: String) {
+
         alert(message)
     }
 

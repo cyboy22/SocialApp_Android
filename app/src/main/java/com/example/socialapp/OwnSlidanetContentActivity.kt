@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewManager
 import android.widget.Button
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -103,11 +105,13 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
     }
 
     override fun networkAlert(message: String) {
+
     }
 
     override fun initialize() {
 
         if (!SocialApp.listingsDownloadComplete) {
+
             SocialApp.sendMessageHandler.post {
                 SocialApp.socialServer.getContentListingRequest()
             }
@@ -122,14 +126,23 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         val check = ""
     }
 
+    override fun addEditor(editorView: ConstraintLayout) {
+
+        val contentView: ConstraintLayout = findViewById<ConstraintLayout>(R.id.slidanet_own_content)
+        val viewWidth = contentView.width
+        val viewHeight = contentView.height
+        contentView.addView(editorView)
+
+    }
+
+    override fun removeEditor(editorView: ConstraintLayout) {
+
+        (editorView.parent as ViewManager).removeView(editorView)
+
+    }
+
     override fun refreshSlidanetContent(index: Int) {
 
         adapter.notifyItemChanged(index)
-    }
-
-    override fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout) {
-
-        findViewById<ConstraintLayout>(android.R.id.content).addView(slidanetEditorLayout)
-
     }
 }

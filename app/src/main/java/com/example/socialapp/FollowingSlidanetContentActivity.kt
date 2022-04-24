@@ -5,6 +5,8 @@ import android.app.Activity
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewManager
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -105,19 +107,28 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
     }
 
     override fun switchActivity(tracker: ActivityTracker) {
+
     }
 
     override fun refreshContent() {
     }
 
+    override fun addEditor(editorView: ConstraintLayout) {
+
+        val parentView = findViewById<ConstraintLayout>(android.R.id.content)
+        val viewWidth = parentView.width
+        val viewHeight = parentView.height
+        parentView.addView(editorView)
+
+    }
+
+    override fun removeEditor(editorView: ConstraintLayout) {
+
+        (editorView.parent as ViewManager).removeView(editorView)
+    }
+
     override fun refreshSlidanetContent(index: Int) {
 
         adapter.notifyItemChanged(index)
-    }
-
-    override fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout) {
-
-        findViewById<ConstraintLayout>(android.R.id.content).addView(slidanetEditorLayout)
-
     }
 }

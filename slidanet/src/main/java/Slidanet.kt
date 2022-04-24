@@ -1,6 +1,7 @@
 import android.content.ContentResolver
 import android.content.Context
 import android.graphics.*
+import android.graphics.drawable.GradientDrawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
@@ -22,6 +23,7 @@ import java.io.InputStream
 import java.util.*
 import kotlin.math.absoluteValue
 
+
 object Slidanet {
 
     internal val requests = mutableMapOf<Int, SlidanetResponseData>()
@@ -35,6 +37,7 @@ object Slidanet {
     private var rendererInitialized = false
     internal var screenWidthInPixels: Int = 0
     internal var screenHeightInPixels: Int = 0
+    internal var screenDensity: Float = 0f
     private val mime: MimeTypeMap = MimeTypeMap.getSingleton()
     internal val locale: Locale = Locale.ENGLISH
     internal var rendererHandler: Handler
@@ -83,6 +86,7 @@ object Slidanet {
                 slidaName: String,
                 screenWidthInPixels: Int,
                 screenHeightInPixels: Int,
+                screenDensity: Float,
                 responseHandler: SlidanetResponseHandler) : SlidanetResponseType {
 
         try {
@@ -105,21 +109,28 @@ object Slidanet {
 
                 this.screenWidthInPixels = screenWidthInPixels
                 this.screenHeightInPixels = screenHeightInPixels
+                this.screenDensity = screenDensity
                 this.applicationContext = applicationContext
 
                 if (editorContent == null) {
 
-                    contentInEditor = SlidanetContentAddress(
-                        contentAddress = "",
-                        editorEnabled = true
-                    )
+                    contentInEditor = SlidanetContentAddress(contentAddress = "ABC",
+                                                             contentPath = "XYZ",
+                                                             editorEnabled = true)
                     referenceView = SlidanetImage(applicationContext)
                     referenceView.id = View.generateViewId()
                     border = SlidanetBorder(Constants.defaultBorderColor, Constants.defaultBorderWidth)
                     border.setDottedLine()
                     referenceView.background = border
+
                     editorContent = SlidanetEditorContent(applicationContext)
                     editorContent!!.id = View.generateViewId()
+
+                    val border = GradientDrawable()
+                    border.setColor(Color.argb(0,1,1,1))
+                    border.setStroke(2, -0x1000000) //black border with full opacity
+                    referenceView.background  = border
+
                 }
 
                 if (editorControl == null) {
@@ -146,7 +157,9 @@ object Slidanet {
 
                 if (!rendererInitialized) {
 
-                    rendererHandler.post { renderer = SlidanetRenderer() }
+                        rendererHandler.post { renderer = SlidanetRenderer()
+                        renderer.setEditorObject(contentInEditor!!)
+                    }
                 }
 
                 receiveMessageHandler.post { server.connect(requestId = requestId,
@@ -2346,30 +2359,18 @@ object Slidanet {
 
         val v = ConstraintLayout(applicationContext)
         v.id = View.generateViewId()
-        /*
-        val constraintLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
-            ConstraintLayout.LayoutParams.WRAP_CONTENT)
-        */
+
         val constraintLayoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT,
                                                                    ConstraintLayout.LayoutParams.MATCH_PARENT)
         slidanetContentAddress.layoutParams = constraintLayoutParams
-        //v.layoutParams = constraintLayoutParams
         v.addView(slidanetContentAddress)
-        /*
-        val constraintSet = ConstraintSet()
-        constraintSet.clone(v)
-        constraintSet.connect(slidanetContentAddress.id, ConstraintSet.TOP, v.id, ConstraintSet.TOP, 0)
-        constraintSet.connect(slidanetContentAddress.id, ConstraintSet.LEFT, v.id, ConstraintSet.LEFT, 0)
-        constraintSet.connect(slidanetContentAddress.id, ConstraintSet.BOTTOM, v.id, ConstraintSet.BOTTOM, 0)
-        constraintSet.connect(slidanetContentAddress.id, ConstraintSet.RIGHT, v.id, ConstraintSet.RIGHT, 0)
-        constraintSet.applyTo(v);
-        */
+
         return v
     }
 
     private fun createSlidanetContentAddress(requestId: Int): SlidanetContentAddress? {
 
-        var contentAddress: SlidanetContentAddress? = null
+        var ca: SlidanetContentAddress? = null
 
         requests[requestId]?.let {
 
@@ -2379,22 +2380,19 @@ object Slidanet {
 
             when (requestData.getInt(SlidanetConstants.slidanet_content_type)) {
 
-                0 -> contentAddress = SlidanetContentAddress(
-                    contentAddress = slidanetContentAddress,
-                    contentType = SlidanetContentType.Image,
-                    contentPath = contentPath
-                )
+                0 -> ca = SlidanetContentAddress(contentAddress = slidanetContentAddress,
+                                                 contentType = SlidanetContentType.Image,
+                                                 contentPath = contentPath)
+
                 1 -> { val videoStartTime = requestData.getDouble(Constants.videoStartTimeLiteral)
-                       contentAddress = SlidanetContentAddress(
-                           contentAddress = slidanetContentAddress,
-                           contentType = SlidanetContentType.StaticVideo,
-                           contentPath = contentPath
-                       )
+                       ca = SlidanetContentAddress(contentAddress = slidanetContentAddress,
+                                                   contentType = SlidanetContentType.StaticVideo,
+                                                   contentPath = contentPath)
                 }
             }
         }
 
-        return contentAddress
+        return ca
     }
 
     internal fun getRawResource(resource: Int): String? {

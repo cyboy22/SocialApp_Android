@@ -21,7 +21,7 @@ class OwnLegacyContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>()
 
         fun bind(contentId: String, contentText: String) {
             textView.text = contentText
-            textView.setBackgroundColor(Color.RED)
+            //textView.setBackgroundColor(Color.RED)
 
             // load imageView from disk file (check width/height and adjust layout parameters)
         }
@@ -46,7 +46,7 @@ class OwnLegacyContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>()
         fun bind(contentText: String) {
 
             textView.text = contentText
-            textView.setBackgroundColor(Color.RED)
+            //textView.setBackgroundColor(Color.RED)
         }
     }
 

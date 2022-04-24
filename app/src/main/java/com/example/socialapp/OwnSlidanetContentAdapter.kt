@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewManager
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
@@ -58,18 +59,17 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
         fun bind(content: Content) {
 
             slidanetView = SocialApp.slidanetViews[content.slidanetContentAddress]!!
+            if (slidanetView.parent != null) {
+                (slidanetView.parent as ViewManager).removeView(slidanetView)
+            }
 
             val objectWidth = content.objectWidth
             val objectHeight = content.objectHeight
-            //val aspectRatio = objectWidth.toFloat() / objectHeight.toFloat()
-            //val objectDisplayHeight = (SocialApp.screenHeight / Constants.rowSizeScaling).toInt()
-            //val objectDisplayWidth = (objectDisplayHeight * aspectRatio).toInt()
             val constraintLayout: ConstraintLayout = itemView as ConstraintLayout
 
             val constraintSet = ConstraintSet()
             constraintSet.clone(constraintLayout)
             slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectWidth, objectHeight)
-            //slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectDisplayWidth, objectDisplayHeight)
             constraintSet.connect(slidanetView.id, ConstraintSet.TOP, itemView.id, ConstraintSet.TOP, 0)
             constraintSet.connect(slidanetView.id, ConstraintSet.LEFT, itemView.id, ConstraintSet.LEFT, 0)
             constraintSet.applyTo(constraintLayout)

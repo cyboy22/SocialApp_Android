@@ -1,5 +1,7 @@
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Point
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -31,8 +33,8 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     private var secondTapRegistered = false
     private var secondContactTime: Long = 0
     private var subjectFrame = Point(0,0)
-    private val controlFrame = Point(Slidanet.screenWidthInPixels,
-                                     Slidanet.screenHeightInPixels)
+    private val controlFrame = Point((Slidanet.screenWidthInPixels * Slidanet.screenDensity).toInt(),
+                                     (Slidanet.screenHeightInPixels * Slidanet.screenDensity).toInt())
     private var subjectOrigin = Point(0,0)
     private var subjectDiagonal = Point(0,0)
     private var locationInView: IntArray = intArrayOf(0, 0)
@@ -113,15 +115,15 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
     }
 
-    private fun initializeAvailableMovementXYZ() {
+    private fun initializeAvailableMovementXYZ(contentAddressOwner: String) {
 
         availableLeft = 1f + Slidanet.contentInEditor?.getNormalizedTranslationX()!!
         availableUp = 1f + Slidanet.contentInEditor?.getNormalizedTranslationY()!!
 
-        if (Slidanet.slidaName != Slidanet.contentInEditor?.getContentAddressOwner()!!) {
+        if (Slidanet.slidaName == contentAddressOwner) {
 
             availableRight = 2f - availableLeft
-            availableDown = 2f - availableRight
+            availableDown = 2f - availableUp
 
         } else {
 
@@ -130,7 +132,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
         }
     }
 
-    private fun initializeAvailableMovementPeek() {
+    private fun initializeAvailableMovementPeek(contentAddressOwner: String) {
 
         val boxWidth = Slidanet.contentInEditor?.getBoxEndX()!! - Slidanet.contentInEditor?.getBoxBeginX()!!
         val boxHeight = Slidanet.contentInEditor?.getBoxEndY()!! - Slidanet.contentInEditor?.getBoxBeginY()!!
@@ -142,7 +144,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
     }
 
-    private fun initializeAvailableMovementPix() {
+    private fun initializeAvailableMovementPix(contentAddressOwner: String) {
 
         availableRight = 1f
         availableLeft = 0f
@@ -160,19 +162,19 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     ShareModeType.SlideXYZ -> {
 
-                        initializeAvailableMovementXYZ()
+                        initializeAvailableMovementXYZ(contentAddressOwner)
                     }
 
                     ShareModeType.SlidePeekDefine,
                     ShareModeType.SlidePeekSlide-> {
 
-                        initializeAvailableMovementPeek()
+                        initializeAvailableMovementPeek(contentAddressOwner)
                     }
 
                     ShareModeType.SlidePixDefine,
                     ShareModeType.SlidePixSlide -> {
 
-                        initializeAvailableMovementPix()
+                        initializeAvailableMovementPix(contentAddressOwner)
                     }
 
                     else -> {}
@@ -186,19 +188,19 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     ShareModeType.SlideXYZ -> {
 
-                        initializeAvailableMovementXYZ()
+                        initializeAvailableMovementXYZ(contentAddressOwner)
                     }
 
                     ShareModeType.SlidePeekDefine,
                     ShareModeType.SlidePeekSlide-> {
 
-                        initializeAvailableMovementPeek()
+                        initializeAvailableMovementPeek(contentAddressOwner)
                     }
 
                     ShareModeType.SlidePixDefine,
                     ShareModeType.SlidePixSlide -> {
 
-                        initializeAvailableMovementPix()
+                        initializeAvailableMovementPix(contentAddressOwner)
                     }
 
                     else -> {}
@@ -259,6 +261,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     viewPosition = followerObject.getViewPosition()
                 }
+
             } else if (Slidanet.ownerEditingInProgress) {
 
                 Slidanet.contentInEditor?.let { ownerObject ->
@@ -269,6 +272,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
             subjectOrigin.y = (controlFrame.y - (viewPosition[1] + subjectFrame.y)+locationInView[1]).toFloat().toInt()
             subjectDiagonal.y = subjectOrigin.y + subjectFrame.y
+
 
             if (!firstTapRegistered) {
 
@@ -954,12 +958,16 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             var h = 0f
             var editingScale = 1f
 
+            var normalizedTranslationX = 0f
+            var normalizedTranslationY = 0f
+
             if (Slidanet.ownerEditingInProgress) {
 
                 w = requireNotNull(Slidanet.contentInEditor?.getTextureWidth()?.toFloat())
                 h = requireNotNull(Slidanet.contentInEditor?.getTextureHeight()?.toFloat())
                 editingScale = requireNotNull(Slidanet.contentInEditor?.getEditingScale())
-
+                normalizedTranslationX = Slidanet.contentInEditor?.getNormalizedTranslationX()!!
+                normalizedTranslationY = Slidanet.contentInEditor?.getNormalizedTranslationY()!!
 
             } else if (Slidanet.followerTakeInProgress) {
 
@@ -968,6 +976,8 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     w = requireNotNull(it.getTextureWidth().toFloat())
                     h = requireNotNull(it.getTextureHeight().toFloat())
                     editingScale = it.getEditingScale()
+                    normalizedTranslationX = it.getNormalizedTranslationX()
+                    normalizedTranslationY = it.getNormalizedTranslationY()
 
                 }
             }
@@ -976,10 +986,8 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                 val a = w/h
 
-                val scaleDeltaX = w * a
-                val scaleDeltaY = w / a
-                var normalizedTranslationX = 0f
-                var normalizedTranslationY = 0f
+                val scaleDeltaX = 1f//w * a
+                val scaleDeltaY = 1f//w / a
 
                 if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
 
@@ -992,72 +1000,19 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                 val viewNormalizedDeltaY =
                     ((currentTouchPosition.y - lastTouchPosition.y).toFloat() / controlFrame.y.toFloat()) * scaleDeltaY
 
+
                 lastTouchPosition.x = currentTouchPosition.x
                 lastTouchPosition.y = currentTouchPosition.y
 
-                if (viewNormalizedDeltaX > 0f) {
+                normalizedTranslationX += viewNormalizedDeltaX
+                if (normalizedTranslationX < -1f) normalizedTranslationX = -1f
+                if (normalizedTranslationX > 1f) normalizedTranslationX = 1f
 
-                    if (availableRight <= viewNormalizedDeltaX.absoluteValue) {
+                normalizedTranslationY -= viewNormalizedDeltaY
+                if (normalizedTranslationY < -1f) normalizedTranslationY = -1f
+                if (normalizedTranslationY > 1f) normalizedTranslationY = 1f
 
-                        availableLeft = 2f/editingScale
-                        availableRight = 0f
-                        normalizedTranslationX = 1f
-
-                    } else if (availableRight > viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight -= viewNormalizedDeltaX
-                        availableLeft += viewNormalizedDeltaX
-                        normalizedTranslationX = 1f - availableRight
-                    }
-
-                } else if (viewNormalizedDeltaX < 0f) {
-
-                    if (availableLeft <= viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight = 2f/editingScale
-                        availableLeft = 0f
-                        normalizedTranslationX = -1f
-
-                    } else if (availableLeft > viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight -= viewNormalizedDeltaX
-                        availableLeft += viewNormalizedDeltaX
-                        normalizedTranslationX = 1f - availableRight
-                    }
-                }
-
-                if (viewNormalizedDeltaY > 0f) {
-
-                    if (availableDown <= viewNormalizedDeltaY.absoluteValue) {
-
-                        availableUp = 2f/editingScale
-                        availableDown = 0f
-                        normalizedTranslationY = 1f
-
-                    } else if (availableDown > viewNormalizedDeltaY.absoluteValue) {
-
-                        availableDown -= viewNormalizedDeltaY
-                        availableUp += viewNormalizedDeltaY
-                        normalizedTranslationY = -(1f - availableUp)
-                    }
-
-                } else if (viewNormalizedDeltaY < 0f) {
-
-                    if (availableUp <= viewNormalizedDeltaY.absoluteValue) {
-
-                        availableDown = 2f/editingScale
-                        availableUp = 0f
-                        normalizedTranslationY = -1f
-
-                    } else if (availableUp > viewNormalizedDeltaY.absoluteValue) {
-
-                        availableUp += viewNormalizedDeltaY
-                        availableDown -= viewNormalizedDeltaY
-                        normalizedTranslationY = -(1f - availableUp)
-                    }
-                }
-
-                if ((normalizedTranslationX != lastNormalizedTranslationX) || normalizedTranslationY != lastNormalizedTranslationY) {
+                if ((normalizedTranslationX != lastNormalizedTranslationX) ||normalizedTranslationY != lastNormalizedTranslationY) {
 
                     lastNormalizedTranslationX = normalizedTranslationX
                     lastNormalizedTranslationY = normalizedTranslationY

@@ -1,0 +1,14 @@
+Slide
+	- basic movement as owner
+		- without update during edit + commit + cancel + server
+		- with update during edit + server
+		- double tap to exit editing
+
+	- basic movement as follower
+		- confirmation of take
+		- double tap to exit editing
+
+	- pinch to animate content into view
+	- swipe to bounce
+	- reverse pinch to move content out of view
+	- pinch to move content into view

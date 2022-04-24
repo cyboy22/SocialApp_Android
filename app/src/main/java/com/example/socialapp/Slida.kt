@@ -112,5 +112,12 @@ class Slida: SlidanetResponseHandler {
 
     private fun handleEditViewResponse(slidanetResponseData: SlidanetResponseData) {
 
+        when (slidanetResponseData.responseCode) {
+
+            SlidanetResponseType.EditingContent -> {
+
+                SocialApp.slidanetCallbacks.addEditor(slidanetResponseData.editorView!!)
+            }
+        }
     }
 }

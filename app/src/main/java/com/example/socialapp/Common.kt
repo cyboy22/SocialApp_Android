@@ -280,6 +280,7 @@ object Constants {
      fun processServerMessage(messageType: MessageType, message: ByteArray) {
 
        try {
+
           when (messageType) {
 
              MessageType.AddMemberResponse -> processAddMemberResponse(message)
@@ -451,6 +452,7 @@ object Constants {
                                                          slidaName = slidanetName,
                                                          screenWidthInPixels = screenWidth,
                                                          screenHeightInPixels = screenHeight,
+                                                         screenDensity = density,
                                                          responseHandler = slida)
                          if (response != SlidanetResponseType.RequestSubmitted) {
                              print("Error Occurred")
@@ -709,8 +711,8 @@ interface NetworkMessageHandler {
 interface SlidanetCallbacks {
 
     fun refreshSlidanetContent(index: Int)
-    fun loadSlidanetViewEditor(slidanetEditorLayout: ConstraintLayout)
-
+    fun addEditor(editorView: ConstraintLayout)
+    fun removeEditor(editorView: ConstraintLayout)
 }
 
 fun createUUID() : String {

@@ -1,4 +1,5 @@
 import org.json.JSONObject
+import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 
 internal interface SlidanetObject {
@@ -84,6 +85,7 @@ internal interface SlidanetObject {
     fun setAlphaMaskColor(color: Float)
     fun setStartTime(startTime: Float)
     fun initializeImage()
+    fun initializeBackground()
     fun initializeVideo()
     fun initializeTexture()
     fun getEditingScale(): Float
@@ -113,5 +115,8 @@ internal interface SlidanetObject {
     fun getVideoPlayer() : SlidanetVideoPlayer
     fun setContentAlpha(alpha: Float)
     fun getIndicesBuffer() : ShortBuffer
+    fun getBackgroundAlphaColor(): Float
+    fun getBackgroundVertexBuffer() : FloatBuffer
+    fun getEditorBackgroundVertexBuffer() : FloatBuffer
     fun restore()
 }

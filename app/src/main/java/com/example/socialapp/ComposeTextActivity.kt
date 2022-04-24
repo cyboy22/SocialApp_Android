@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import androidx.constraintlayout.widget.ConstraintLayout
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -99,4 +100,5 @@ class ComposeTextActivity : AppCompatActivity(),
 
     override fun refreshContent() {
     }
+
 }

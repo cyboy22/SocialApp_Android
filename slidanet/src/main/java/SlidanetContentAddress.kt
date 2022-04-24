@@ -6,12 +6,15 @@ import android.net.Uri
 import android.opengl.*
 import android.os.Build
 import android.view.*
+import android.widget.RelativeLayout
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.GestureDetectorCompat
 import org.json.JSONObject
 import java.io.File
+import java.io.FileNotFoundException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import java.util.*
@@ -22,6 +25,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                                       private var contentPath: String = "",
                                       private var videoStartTime: Float = 0.0F,
                                       private var editorEnabled: Boolean = false,
+                                      private var backgroundContentPath: String = "",
                                       private val contentBackgroundColor: Int = Color.WHITE,
                                       private var doubleTapEditingEnabled: Boolean = true) : TextureView(Slidanet.applicationContext),
                                                                                               SlidanetObject,
@@ -32,6 +36,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                                                                                               SurfaceTexture.OnFrameAvailableListener {
 
     private lateinit var bmp: Bitmap
+    private lateinit var backgroundBmp: Bitmap
     private var updateDuringEdit = false
     private var startTime: Float = 0.0F
     private var takenStatus = false
@@ -94,13 +99,19 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     @Volatile internal var blueMaskColor = 1f
     @Volatile internal var alphaMaskColor = 1f
     @Volatile internal var flipTexture = false
-    @Volatile internal var textureHandles: IntArray = IntArray(1)
+    @Volatile internal var textureHandles: IntArray = IntArray(3)
     @Volatile internal var videoSurfaceTextureId = 0
     @Volatile internal var scale: Float = 1.0F
     @Volatile internal var textureId = 0
+    @Volatile internal var editorBackgroundTextureId = 0
+    @Volatile internal var backgroundTextureId = 0
     @Volatile internal lateinit var windowSurface: EGLSurface
     @Volatile internal var shaderName = "DefaultShader"
+    @Volatile internal lateinit var editorBackgroundTextureTransformationBuffer: FloatBuffer
+    @Volatile internal lateinit var backgroundTextureTransformationBuffer: FloatBuffer
     @Volatile internal lateinit var textureTransformationBuffer: FloatBuffer
+    @Volatile internal var editorBackgroundTextureTransformMatrix: FloatArray = floatArrayOf()
+    @Volatile internal var backgroundTextureTransformMatrix: FloatArray = floatArrayOf()
     @Volatile internal var textureTransformMatrix: FloatArray = floatArrayOf()
     @Volatile internal var textureWidth = 0
     @Volatile internal var textureHeight = 0
@@ -108,12 +119,18 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     @Volatile internal lateinit var videoSurface: Surface
     @Volatile internal lateinit var indicesBuffer: ShortBuffer
     @Volatile internal lateinit var vertexBuffer: FloatBuffer
+    @Volatile internal lateinit var backgroundVertexBuffer: FloatBuffer
+    @Volatile internal lateinit var editorBackgroundVertexBuffer: FloatBuffer
+
     @Volatile internal lateinit var sTexture: SurfaceTexture
     private lateinit var videoPlayer: SlidanetVideoPlayer
 
     private var initialized: Boolean = false
 
     init {
+
+        this.isOpaque = false
+        //this.setBackgroundColor(Color.TRANSPARENT)
 
         val c = Color.valueOf(contentBackgroundColor)
 
@@ -126,6 +143,8 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             gestureDetector.setOnDoubleTapListener(this)
 
+            initializeBackground()
+
             when (contentType) {
 
                 SlidanetContentType.Image -> initializeImage()
@@ -135,19 +154,69 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             initializeTexture()
         }
+
+        initializeBackgroundVertices()
+        initializeEditorBackgroundVertices()
+        initializeIndices()
+    }
+
+    private fun initializeBackgroundVertices() {
+
+        val vertexCoordinates = floatArrayOf(-1f,  1f, 0f, 0f, 1f,// top left
+                                             -1f, -1f, 0f, 0f, 0f,// bottom left
+                                             1f,  -1f, 0f, 1f, 0f,//bottom right
+                                             1f,  1f,  0f, 1f, 1f) // top right
+
+        backgroundVertexBuffer = createFloatBuffer(vertexCoordinates)
+    }
+
+    private fun initializeEditorBackgroundVertices() {
+
+        val vertexCoordinates = floatArrayOf(-1f,  1f, 0f, 0f, 1f,// top left
+                                             -1f, -1f, 0f, 0f, 0f,// bottom left
+                                             1f,  -1f, 0f, 1f, 0f,//bottom right
+                                             1f,  1f,  0f, 1f, 1f) // top right
+
+        editorBackgroundVertexBuffer = createFloatBuffer(vertexCoordinates)
     }
 
     override fun initializeImage() {
 
-        BitmapFactory.decodeFile(contentPath)?.let {
+        try {
 
-            bmp = it
-            val flip = android.graphics.Matrix()
-            flip.postScale(1f, -1f)
-            bmp = Bitmap.createBitmap(bmp,0,0,bmp.width, bmp.height, flip,true)
+            BitmapFactory.decodeFile(contentPath)?.let {
 
-            bitmapWidth = it.width
-            bitmapHeight = it.height
+                bmp = it
+                val flip = android.graphics.Matrix()
+                flip.postScale(1f, -1f)
+                bmp = Bitmap.createBitmap(bmp,0,0,bmp.width, bmp.height, flip,true)
+
+                bitmapWidth = it.width
+                bitmapHeight = it.height
+            }
+
+        } catch (e: FileNotFoundException) {
+
+        }
+    }
+
+    override fun initializeBackground() {
+
+        try {
+
+            BitmapFactory.decodeFile(backgroundContentPath)?.let {
+
+                backgroundBmp = it
+                val flip = android.graphics.Matrix()
+                flip.postScale(1f, -1f)
+                backgroundBmp = Bitmap.createBitmap(backgroundBmp,0,0,backgroundBmp.width, backgroundBmp.height, flip,true)
+
+                bitmapWidth = it.width
+                bitmapHeight = it.height
+            }
+
+        } catch (e: FileNotFoundException) {
+
         }
     }
 
@@ -167,8 +236,11 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         textureTransformMatrix = FloatArray(16)
         Matrix.setIdentityM(textureTransformMatrix,0)
+        backgroundTextureTransformMatrix = FloatArray(16)
+        Matrix.setIdentityM(backgroundTextureTransformMatrix,0)
+        editorBackgroundTextureTransformMatrix = FloatArray(16)
+        Matrix.setIdentityM(editorBackgroundTextureTransformMatrix,0)
         surfaceTextureListener = this
-        initializeIndices()
     }
 
     override fun getEditingScale(): Float {
@@ -212,6 +284,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     }
 
     override fun onFling(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+
         return true
     }
 
@@ -235,6 +308,15 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         moveCount++
     }
 
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+
+        return if (gestureDetector.onTouchEvent(event)) {
+            true
+        } else {
+            super.onTouchEvent(event)
+        }
+    }
+
     override fun getContentFilter() : SlidanetContentFilterType {
 
         return contentFilter
@@ -248,6 +330,18 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     override fun getVideoPlayer() : SlidanetVideoPlayer {
 
         return videoPlayer
+    }
+
+    override fun getBackgroundVertexBuffer() : FloatBuffer {
+
+        return backgroundVertexBuffer
+
+    }
+
+    override fun getEditorBackgroundVertexBuffer() : FloatBuffer {
+
+        return editorBackgroundVertexBuffer
+
     }
 
     override fun distributeMove() {
@@ -331,9 +425,11 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         } else {
 
-            if (updateDuringEdit) {
+            if (!updateDuringEdit) {
+
                 saveParameters()
             }
+
             Slidanet.ownerEditingInProgress = true
             Slidanet.contentInEditor?.let {
 
@@ -503,13 +599,29 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         vertexBuffer = createFloatBuffer(vertexCoordinates)
     }
 
+    private fun createBackgroundPixel(color: Int) : ByteBuffer {
+
+        val bb = ByteBuffer.allocateDirect(4)
+        bb.order(ByteOrder.nativeOrder())
+
+        bb.position(0)
+        bb.put((Color.red(color)).toByte())
+        bb.put((Color.green(color)).toByte())
+        bb.put((Color.blue(color)).toByte())
+        bb.put((Color.alpha(color)).toByte())
+        bb.position(0)
+        return bb
+    }
+
     private fun createTexture() {
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
 
         GLES20.glGenTextures(textureHandles.size, textureHandles, 0)
 
-        textureId = textureHandles[0]
+        textureId = textureHandles[1]
+        backgroundTextureId = textureHandles[0]
+        editorBackgroundTextureId = textureHandles[2]
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
 
@@ -537,6 +649,71 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         Slidanet.renderer.checkGlError("Texture Creation")
 
         bmp.recycle()
+
+        Slidanet.editorContentAddress.let {
+
+            if (it.isNotEmpty() && it == this.editorContentAddress) {
+
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, editorBackgroundTextureId)
+
+                GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,
+                                           0,
+                                           GLES20.GL_RGBA,
+                                           1,
+                                           1,
+                                           0,
+                                           GLES20.GL_RGBA,
+                                           GLES20.GL_UNSIGNED_BYTE,
+                                           createBackgroundPixel(Color.argb(0,1,1,1)))
+
+            } else {
+
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, backgroundTextureId)
+
+                if (backgroundContentPath.isNotEmpty()) {
+
+                    GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                                           GLES20.GL_TEXTURE_MIN_FILTER,
+                                           GLES20.GL_LINEAR.toFloat())
+                    Slidanet.renderer.checkGlError("MIN Texture Filter")
+
+                    GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                                           GLES20.GL_TEXTURE_MAG_FILTER,
+                                           GLES20.GL_LINEAR.toFloat())
+                    Slidanet.renderer.checkGlError("MAG Texture Filter")
+
+                    GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                                           GLES20.GL_TEXTURE_WRAP_S,
+                                           GLES20.GL_CLAMP_TO_EDGE.toFloat())
+                    Slidanet.renderer.checkGlError("Texture Clamp To Edge S")
+
+                    GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D,
+                                           GLES20.GL_TEXTURE_WRAP_T,
+                                           GLES20.GL_CLAMP_TO_EDGE.toFloat())
+                    Slidanet.renderer.checkGlError("Texture Clamp To Edge T")
+
+                    GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, backgroundBmp, 0)
+                    Slidanet.renderer.checkGlError("Texture Creation")
+
+                    backgroundBmp.recycle()
+
+                } else {
+
+                    GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D,
+                                        0,
+                                        GLES20.GL_RGBA,
+                                        1,
+                                        1,
+                                        0,
+                                        GLES20.GL_RGBA,
+                                        GLES20.GL_UNSIGNED_BYTE,
+                                        createBackgroundPixel(Color.argb(0f,
+                                                                         backgroundRedColor,
+                                                                         backgroundGreenColor,
+                                                                         backgroundBlueColor)))
+                }
+            }
+        }
     }
 
     override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
@@ -581,90 +758,93 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     }
 
-    override fun copyOwnerParametersToEditor(contentAddress: String) {
+    override fun getBackgroundAlphaColor() : Float {
 
-        Slidanet.rendererHandler.post {
-
-            Slidanet.slidanetContentAddresses[contentAddress]?.let {
-
-                shareMode = it.getShareMode()
-                contentAddressOwner = it.getContentAddressOwner()
-                updateDuringEdit = it.getUpdateDuringEdit()
-                rotationAngle = it.getRotationAngle()
-                moveRequestCount = 0
-                contentPath = it.getContentPath()
-                contentType = it.getContentType()
-                shaderName = it.getShaderName()
-                editingScale = it.getEditingScale()
-                editorContentAddress = it.getEditorContentAddress()
-                fadeBarrier = it.getFadeBarrier()
-                snapThreshold = it.getSnapThreshold()
-                flipTexture = it.getFlipTexture()
-                redMaskColor = it.getRedMaskColor()
-                greenMaskColor = it.getGreenMaskColor()
-                blueMaskColor = it.getBlueMaskColor()
-                alphaMaskColor = it.getAlphaMaskColor()
-                startTime = it.getStartTime()
-                hideEnabled = it.getHideEnabled()
-                doubleTapEditingEnabled = it.getDoubleTapEditingEnabled()
-                redMaskColor = it.getRedMaskColor()
-                greenMaskColor = it.getGreenMaskColor()
-                blueMaskColor = it.getBlueMaskColor()
-                alphaMaskColor = it.getAlphaMaskColor()
-
-                when (shareMode) {
-
-                    ShareModeType.SlideXYZ -> {
-
-                        normalizedTranslationX = it.getNormalizedTranslationX()
-                        normalizedTranslationY = it.getNormalizedTranslationY()
-                        normalizedTranslationZ = it.getNormalizedTranslationZ()
-                    }
-
-                    ShareModeType.SlidePeekDefine,
-                    ShareModeType.SlidePeekSlide-> {
-
-                        boxBeginX = it.getBoxBeginX()
-                        boxBeginY = it.getBoxBeginY()
-                        boxEndX = it.getBoxEndX()
-                        boxEndY = it.getBoxEndY()
-                    }
-
-                    ShareModeType.SlidePixDefine,
-                    ShareModeType.SlidePixSlide-> {
-
-                        pixPercentage = it.getPixPercentage()
-                    }
-
-                    else -> {}
-                }
-            }
-
-            Slidanet.mainHandler?.post {
-
-                when (contentType) {
-
-                    SlidanetContentType.Image -> {
-
-                        initializeImage()
-                    }
-
-                    SlidanetContentType.StaticVideo -> {
-
-                        initializeVideo()
-                    }
-
-                    else -> { }
-                }
-
-                initializeTexture()
-            }
-        }
+        return backgroundAlphaColor
     }
 
-    override fun setEditorContentAddress(address: String) {
+    override fun copyOwnerParametersToEditor(contentAddress: String) {
 
-        editorContentAddress = address
+        Slidanet.slidanetContentAddresses[contentAddress]?.let {
+
+            shareMode = it.getShareMode()
+            contentAddressOwner = it.getContentAddressOwner()
+            updateDuringEdit = it.getUpdateDuringEdit()
+            rotationAngle = it.getRotationAngle()
+            moveRequestCount = 0
+            contentPath = it.getContentPath()
+            contentType = it.getContentType()
+            shaderName = it.getShaderName()
+            editingScale = it.getEditingScale()
+            editorContentAddress = it.getEditorContentAddress()
+            fadeBarrier = it.getFadeBarrier()
+            snapThreshold = it.getSnapThreshold()
+            flipTexture = it.getFlipTexture()
+            redMaskColor = it.getRedMaskColor()
+            greenMaskColor = it.getGreenMaskColor()
+            blueMaskColor = it.getBlueMaskColor()
+            alphaMaskColor = it.getAlphaMaskColor()
+            startTime = it.getStartTime()
+            hideEnabled = it.getHideEnabled()
+            doubleTapEditingEnabled = it.getDoubleTapEditingEnabled()
+            redMaskColor = it.getRedMaskColor()
+            greenMaskColor = it.getGreenMaskColor()
+            blueMaskColor = it.getBlueMaskColor()
+            alphaMaskColor = it.getAlphaMaskColor()
+            flipTexture = it.getFlipTexture()
+            textureWidth = it.getTextureWidth()
+            textureHeight = it.getTextureHeight()
+            editorContentAddress = it.getContentAddress()
+
+            when (shareMode) {
+
+                ShareModeType.SlideXYZ -> {
+
+                    normalizedTranslationX = it.getNormalizedTranslationX()
+                    normalizedTranslationY = it.getNormalizedTranslationY()
+                    normalizedTranslationZ = it.getNormalizedTranslationZ()
+                }
+
+                ShareModeType.SlidePeekDefine,
+                ShareModeType.SlidePeekSlide-> {
+
+                    boxBeginX = it.getBoxBeginX()
+                    boxBeginY = it.getBoxBeginY()
+                    boxEndX = it.getBoxEndX()
+                    boxEndY = it.getBoxEndY()
+                }
+
+                ShareModeType.SlidePixDefine,
+                ShareModeType.SlidePixSlide-> {
+
+                    pixPercentage = it.getPixPercentage()
+                }
+
+                else -> {}
+            }
+        }
+
+        Slidanet.mainHandler?.post {
+
+            initializeBackground()
+
+            when (contentType) {
+
+                SlidanetContentType.Image -> {
+
+                    initializeImage()
+                }
+
+                SlidanetContentType.StaticVideo -> {
+
+                    initializeVideo()
+                }
+
+                else -> { }
+            }
+
+            initializeTexture()
+        }
     }
 
     override fun setPixelWidth(pixelWidth: Int) {
@@ -717,6 +897,11 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         editingScale = scale
     }
 
+    override fun setEditorContentAddress(address: String) {
+
+        editorContentAddress = address
+    }
+
     override fun setContentType(cType: SlidanetContentType) {
 
         contentType = cType
@@ -761,24 +946,21 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         }
     }
 
-    override fun initializeEditor(contentAddress: String, initiator: SlidanetEditingInitiatorType) {
+    fun initializeOwnerEditing(contentAddress: String,
+                               initiator: SlidanetEditingInitiatorType,
+                                editorView: ConstraintLayout) {
 
-        var editorView: ConstraintLayout = Slidanet.editorContent!!
-        Slidanet.editorControl?.initialize()
+    }
 
-        if (Slidanet.slidaName == contentAddressOwner) {
+    fun initializeFollowerEditing(contentAddress: String,
+                                  initiator: SlidanetEditingInitiatorType,
+                                  editorView: ConstraintLayout) {
 
-            copyOwnerParametersToEditor(contentAddress)
-            initializeEditorLayoutParams()
+    }
 
-        } else if (giveEnabled) {
-
-            editorView = Slidanet.editorControl!!
-
-        } else {
-
-            return
-        }
+    private fun initializeEditorResponse(contentAddress: String,
+                                         initiator: SlidanetEditingInitiatorType,
+                                         editorView: ConstraintLayout) {
 
         Slidanet.rendererHandler.post { Slidanet.editorControl?.initializeAvailableMovement(contentAddress, contentAddressOwner) }
 
@@ -800,6 +982,39 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         }
     }
 
+    override fun initializeEditor(contentAddress: String, initiator: SlidanetEditingInitiatorType) {
+
+        var editorView: ConstraintLayout = Slidanet.editorContent!!
+        Slidanet.editorControl?.initialize()
+
+        if (Slidanet.slidaName == contentAddressOwner) {
+
+            Slidanet.rendererHandler.post {
+
+                copyOwnerParametersToEditor(contentAddress)
+
+                Slidanet.mainHandler?.post {
+
+                    initializeEditorLayoutParams()
+
+                    initializeEditorResponse(contentAddress, initiator, editorView)
+
+                }
+            }
+
+        } else if (giveEnabled) {
+
+            editorView = Slidanet.editorControl!!
+
+            initializeEditorResponse(contentAddress, initiator, editorView)
+
+        } else {
+
+            return
+        }
+
+    }
+
     override fun setNormalizedTranslationX(x: Float) {
 
         normalizedTranslationX = x
@@ -817,7 +1032,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     private fun initializeEditorLayoutParams() {
 
-        val aspectRatio = textureWidth.toFloat() / textureHeight.toFloat()
+        val aspectRatio: Float = (textureWidth.toFloat()) / (textureHeight.toFloat())
 
         var nw = 0
         var nh = 0
@@ -850,41 +1065,16 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             else -> {}
         }
 
-        Slidanet.rendererHandler.post { this.editingScale = editingScale }
-
-        this.layoutParams = ConstraintLayout.LayoutParams(
-
-            (nw.toFloat() / editingScale).toInt(),
-            (nh.toFloat() / editingScale).toInt()
-        )
+        Slidanet.rendererHandler.post { scale = editingScale }
 
         if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
 
             Slidanet.editorContent?.removeAllViews()
         }
 
-        val constraintSet = ConstraintSet()
-        constraintSet.clone(Slidanet.editorContent)
-
-        Slidanet.editorContent?.let {
-
-            constraintSet.connect(this.id, ConstraintSet.TOP, it.id, ConstraintSet.TOP, 0)
-            constraintSet.connect(this.id, ConstraintSet.LEFT, it.id, ConstraintSet.LEFT, 0)
-            constraintSet.connect(this.id, ConstraintSet.BOTTOM, it.id, ConstraintSet.BOTTOM, 0)
-            constraintSet.connect(this.id, ConstraintSet.RIGHT, it.id, ConstraintSet.RIGHT, 0)
-        }
-
-        /*
-        if (shareMode == ShareModeType.SlideRightToLeft ||
-            shareMode == ShareModeType.SlideLeftToRight ||
-            shareMode == ShareModeType.SlideTopToBottom ||
-            shareMode == ShareModeType.SlideBottomToTop ||
-            shareMode == ShareModeType.SlideUnrestricted) {
-
-            Slidanet.referenceView.layoutParams = ConstraintLayout.LayoutParams( (nw.toFloat()/editingScale).toInt(),
-                                                                                  (nh.toFloat()/editingScale).toInt())
-        }
-        */
+        val relativeLayout = RelativeLayout(Slidanet.applicationContext)
+        relativeLayout.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+                                                                  RelativeLayout.LayoutParams.MATCH_PARENT )
 
         when (shareMode) {
 
@@ -892,11 +1082,11 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                 Slidanet.editorContent?.let {
 
-                    constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.TOP, it.id, ConstraintSet.TOP, 0)
-                    constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.LEFT, it.id, ConstraintSet.LEFT, 0)
-                    constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.BOTTOM, it.id, ConstraintSet.BOTTOM, 0)
-                    constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.RIGHT, it.id, ConstraintSet.RIGHT, 0)
-
+                    RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity / editingScale).toInt(),
+                                                (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()).also {
+                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                        Slidanet.referenceView.layoutParams = it
+                    }
                 }
             }
 
@@ -925,16 +1115,25 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             else -> {}
         }
 
-        constraintSet.applyTo(Slidanet.editorContent)
+        this.backgroundAlphaColor = 1f
 
         if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
 
-            Slidanet.editorContent?.addView(this)
+            RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity).toInt(),
+                                        (nh.toFloat() * Slidanet.screenDensity).toInt()).also {
+                it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                this.layoutParams = it
+            }
+
+            relativeLayout.addView(this)
 
             if (shareMode != ShareModeType.SlidePeekSlide &&
-                shareMode != ShareModeType.SlidePeekDefine) {
+                shareMode != ShareModeType.SlidePeekDefine &&
+                shareMode != ShareModeType.SlidePeekSlide &&
+                shareMode != ShareModeType.SlidePixSlide) {
 
-                Slidanet.editorContent?.addView(Slidanet.referenceView)
+                relativeLayout.addView(Slidanet.referenceView)
+                Slidanet.editorContent?.addView(relativeLayout)
             }
 
             Slidanet.editorContent?.addView(Slidanet.editorControl)
@@ -1163,31 +1362,94 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         Slidanet.renderer.apply {
 
             makeCurrent(windowSurface)
+
+
+            /*
             this.setContentBackgroundColor(backgroundRedColor,
                                            backgroundBlueColor,
                                            backgroundGreenColor,
-                                           backgroundAlphaColor)
+                                           0f)
+            */
+
             this.clearSurface()
 
             this.setViewport(textureWidth, textureHeight)
-            /*
-            if (viewType == SlidaViewType.Text) {
-                    activateTexture(GLES20.GL_TEXTURE_2D, textureView.getBackgroundTextureId())
 
-                    loadShader(ShaderContext(_shader = textureView.getShaderType(),
-                        _verticesBuffer = textureView.getBackgroundVertexBuffer(),
-                        _textureTransformMatrix = textureView.GetTextureTransformMatrix(),
-                        _textureWidth = textureView.getTextureWidth(),
-                        _textureHeight = textureView.getTextureHeight(),
-                        _boxBeginX = textureView.getBoxBeginX(),
-                        _boxBeginY = textureView.getBoxBeginY(),
-                        _boxEndX = textureView.getBoxEndX(),
-                        _boxEndY = textureView.getBoxEndY(),
-                        _viewType = viewType))
+            activateTexture(GLES20.GL_TEXTURE_2D, backgroundTextureId)
 
-                    drawElements(textureView.getIndicesBuffer(), 6)
-                }
-            */
+            if (Slidanet.editorContentAddress.isNotEmpty() && Slidanet.editorContentAddress == editorContentAddress) {
+
+                activateTexture(GLES20.GL_TEXTURE_2D, editorBackgroundTextureId)
+
+                loadShader(SlidanetShaderContext(contentFilter = contentFilter,
+                    verticesBuffer = backgroundVertexBuffer,
+                    boxBeginX = boxBeginX,
+                    boxBeginY = boxBeginY,
+                    boxEndX = boxEndX,
+                    boxEndY = boxEndY,
+                    viewType = contentType,
+                    flipTexture = flipTexture,
+                    peekItEnabled = peekEnabled,
+                    pixItEnabled = pixEnabled,
+                    pixelWidth = initializePixelWidth(),
+                    pixelHeight = initializePixelWidth(),
+                    maskRedValue = redMaskColor,
+                    maskGreenValue = greenMaskColor,
+                    maskBlueValue = blueMaskColor,
+                    maskAlphaValue = alphaMaskColor,
+                    textureWidth = textureWidth,
+                    textureHeight = textureHeight,
+                    alpha = 0f))
+
+/*
+                loadShader(SlidanetShaderContext(contentFilter = contentFilter,
+                                                 verticesBuffer = editorBackgroundVertexBuffer,
+                                                 boxBeginX = boxBeginX,
+                                                 boxBeginY = boxBeginY,
+                                                 boxEndX = boxEndX,
+                                                 boxEndY = boxEndY,
+                                                 viewType = contentType,
+                                                 flipTexture = flipTexture,
+                                                 peekItEnabled = peekEnabled,
+                                                 pixItEnabled = pixEnabled,
+                                                 pixelWidth = initializePixelWidth(),
+                                                 pixelHeight = initializePixelWidth(),
+                                                 maskRedValue = redMaskColor,
+                                                 maskGreenValue = greenMaskColor,
+                                                 maskBlueValue = blueMaskColor,
+                                                 maskAlphaValue = alphaMaskColor,
+                                                 textureWidth = textureWidth,
+                                                 textureHeight = textureHeight,
+                                                 alpha = 0f))
+
+ */
+
+            } else {
+
+                activateTexture(GLES20.GL_TEXTURE_2D, backgroundTextureId)
+
+                loadShader(SlidanetShaderContext(contentFilter = contentFilter,
+                                                 verticesBuffer = backgroundVertexBuffer,
+                                                 boxBeginX = boxBeginX,
+                                                 boxBeginY = boxBeginY,
+                                                 boxEndX = boxEndX,
+                                                 boxEndY = boxEndY,
+                                                 viewType = contentType,
+                                                 flipTexture = flipTexture,
+                                                 peekItEnabled = peekEnabled,
+                                                 pixItEnabled = pixEnabled,
+                                                 pixelWidth = initializePixelWidth(),
+                                                 pixelHeight = initializePixelWidth(),
+                                                 maskRedValue = redMaskColor,
+                                                 maskGreenValue = greenMaskColor,
+                                                 maskBlueValue = blueMaskColor,
+                                                 maskAlphaValue = alphaMaskColor,
+                                                 textureWidth = textureWidth,
+                                                 textureHeight = textureHeight,
+                                                 alpha = contentAlpha))
+            }
+
+            drawElements( indicesBuffer, 6)
 
             if (contentType == SlidanetContentType.StaticVideo) {
                 /*

@@ -14,9 +14,15 @@ internal class SlidanetBorder(color: Int, width: Int) : Drawable() {
         paint.style = Paint.Style.STROKE
     }
 
+    public override fun onBoundsChange(bounds: Rect?) {
+
+        boundsRect = bounds
+    }
+
     override fun draw(p0: Canvas) {
 
         boundsRect?.let {  p0.drawRect(it, paint) }
+
     }
 
     override fun setAlpha(p0: Int) {

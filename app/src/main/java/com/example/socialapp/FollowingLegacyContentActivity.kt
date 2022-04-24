@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
+import androidx.constraintlayout.widget.ConstraintLayout
 
 class FollowingLegacyContentActivity : AppCompatActivity(),
                                        NetworkMessageHandler,
@@ -95,4 +96,5 @@ class FollowingLegacyContentActivity : AppCompatActivity(),
 
     override fun refreshContent() {
     }
+
 }

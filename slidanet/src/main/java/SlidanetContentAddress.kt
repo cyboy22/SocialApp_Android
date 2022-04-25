@@ -57,7 +57,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     private lateinit var contentAddressOwner: String
     private lateinit var visibilityPreferences: MutableMap<String, Boolean>
     private lateinit var takers: MutableMap<String, String>
-    private var savedShareMode = ShareModeType.SlideXYZ
+    private var savedShareMode = SlidanetSharingStyleType.Slide
     private var savedNormalizedTranslationX = 1f
     private var savedNormalizedTranslationY = 1f
     private var savedNormalizedTranslationZ = 1f
@@ -86,7 +86,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     @Volatile internal var boxEndX = 0f
     @Volatile internal var boxEndY = 0f
     @Volatile internal var rotationAngle = Constants.noRotation
-    @Volatile internal var shareMode = ShareModeType.SlideXYZ
+    @Volatile internal var shareMode = SlidanetSharingStyleType.Slide
     @Volatile internal var pixPercentage = 0f
     @Volatile internal var slideEnabled = false
     @Volatile internal var peekEnabled = false
@@ -97,7 +97,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     @Volatile internal var contentAlpha = 1f
     @Volatile internal var greenMaskColor = 1f
     @Volatile internal var blueMaskColor = 1f
-    @Volatile internal var alphaMaskColor = 1f
+    @Volatile internal var alphaMaskColor=  1f
     @Volatile internal var flipTexture = false
     @Volatile internal var textureHandles: IntArray = IntArray(3)
     @Volatile internal var videoSurfaceTextureId = 0
@@ -130,7 +130,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     init {
 
         this.isOpaque = false
-        //this.setBackgroundColor(Color.TRANSPARENT)
 
         val c = Color.valueOf(contentBackgroundColor)
 
@@ -348,13 +347,13 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            ShareModeType.SlideXYZ -> distributeTranslation()
+            SlidanetSharingStyleType.Slide -> distributeTranslation()
 
-            ShareModeType.SlidePeekDefine,
-            ShareModeType.SlidePeekSlide,
-            ShareModeType.SlidePixDefine -> distributeMaskBox()
+            SlidanetSharingStyleType.PeekDefine,
+            SlidanetSharingStyleType.PeekSlide,
+            SlidanetSharingStyleType.PixDefine -> distributeMaskBox()
 
-            ShareModeType.SlidePixSlide -> distributePixelWidth()
+            SlidanetSharingStyleType.PixSlide -> distributePixelWidth()
 
             else -> {}
         }
@@ -381,20 +380,41 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         (Slidanet.editorContent?.parent as ViewManager).removeView(Slidanet.editorContent)
 
-        Slidanet.ownerEditingInProgress = false
+        Slidanet.contentInEditor?.let {
 
-        moveCount = Slidanet.contentInEditor?.getMoveCount()!!
+            Slidanet.rendererHandler.post {
 
-        Slidanet.server.logRequest(contentAddress,SlidanetLoggingRequestType.Move, moveCount)
+                shareMode = it.getShareMode()
+                normalizedTranslationX = it.getNormalizedTranslationX()
+                normalizedTranslationY = it.getNormalizedTranslationY()
+                normalizedTranslationZ = it.getNormalizedTranslationZ()
+                initializeVertices(normalizedTranslationX, normalizedTranslationY)
+                boxBeginX = it.getBoxBeginX()
+                boxBeginY - it.getBoxBeginY()
+                boxEndX = it.getBoxEndX()
+                boxEndY = it.getBoxEndY()
 
-        moveCount = 1
+                displayNeedsUpdate = true
 
-        Slidanet.editingState = SlidanetEditingStateType.InActive
+                Slidanet.mainHandler?.post {
 
-        Slidanet.editorContentAddress = ""
+                    Slidanet.ownerEditingInProgress = false
 
+                    moveCount = Slidanet.contentInEditor?.getMoveCount()!!
 
-        distributeTranslation()
+                    Slidanet.server.logRequest(contentAddress,SlidanetLoggingRequestType.Move, moveCount)
+
+                    moveCount = 1
+
+                    Slidanet.editingState = SlidanetEditingStateType.InActive
+
+                    Slidanet.editorContentAddress = ""
+
+                    distributeTranslation()
+
+                }
+            }
+        }
     }
 
     override fun cancelEditing() {
@@ -550,7 +570,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                                                            1f, (2 * translationY)/editingScale,      0f, 1f, 1f) // top right
                     }
                     */
-                    ShareModeType.SlideXYZ -> {
+                    SlidanetSharingStyleType.Slide -> {
 /*
                         vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, (1f - 2 * translationY)/scale,  0f, 0f, 1f,// top left
                                                          (-1f + 2 * translationX)/scale, (-1f - 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
@@ -798,15 +818,15 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             when (shareMode) {
 
-                ShareModeType.SlideXYZ -> {
+                SlidanetSharingStyleType.Slide -> {
 
                     normalizedTranslationX = it.getNormalizedTranslationX()
                     normalizedTranslationY = it.getNormalizedTranslationY()
                     normalizedTranslationZ = it.getNormalizedTranslationZ()
                 }
 
-                ShareModeType.SlidePeekDefine,
-                ShareModeType.SlidePeekSlide-> {
+                SlidanetSharingStyleType.PeekDefine,
+                SlidanetSharingStyleType.PeekSlide-> {
 
                     boxBeginX = it.getBoxBeginX()
                     boxBeginY = it.getBoxBeginY()
@@ -814,8 +834,8 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                     boxEndY = it.getBoxEndY()
                 }
 
-                ShareModeType.SlidePixDefine,
-                ShareModeType.SlidePixSlide-> {
+                SlidanetSharingStyleType.PixDefine,
+                SlidanetSharingStyleType.PixSlide-> {
 
                     pixPercentage = it.getPixPercentage()
                 }
@@ -952,26 +972,22 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     }
 
-    fun initializeFollowerEditing(contentAddress: String,
-                                  initiator: SlidanetEditingInitiatorType,
-                                  editorView: ConstraintLayout) {
-
-    }
-
     private fun initializeEditorResponse(contentAddress: String,
                                          initiator: SlidanetEditingInitiatorType,
                                          editorView: ConstraintLayout) {
-
-        Slidanet.rendererHandler.post { Slidanet.editorControl?.initializeAvailableMovement(contentAddress, contentAddressOwner) }
 
         if (initiator == SlidanetEditingInitiatorType.DoubleTap || initiator == SlidanetEditingInitiatorType.LocalEditing) {
 
             val request = JSONObject()
             request.put(SlidanetConstants.slidanet_content_address, editorContentAddress)
+
+
+
             val response = SlidanetResponseData(requestCode = SlidanetRequestType.EditContent,
                                                 requestInfo = request,
                                                 responseCode = SlidanetResponseType.EditingContent,
-                                                editorView = editorView)
+                                                editorView = editorView
+                                                )
 
             Slidanet.mainHandler?.post { Slidanet.slidanetResponseHandler.slidanetResponse(response) }
         }
@@ -1049,15 +1065,15 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            ShareModeType.SlideXYZ -> {
+            SlidanetSharingStyleType.Slide -> {
 
                 editingScale = 3f
             }
 
-            ShareModeType.SlidePeekDefine,
-            ShareModeType.SlidePeekSlide,
-            ShareModeType.SlidePixDefine,
-            ShareModeType.SlidePixSlide -> {
+            SlidanetSharingStyleType.PeekDefine,
+            SlidanetSharingStyleType.PeekSlide,
+            SlidanetSharingStyleType.PixDefine,
+            SlidanetSharingStyleType.PixSlide -> {
 
                 editingScale = 1f
             }
@@ -1070,15 +1086,12 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
 
             Slidanet.editorContent?.removeAllViews()
+            Slidanet.relativeLayout?.removeAllViews()
         }
-
-        val relativeLayout = RelativeLayout(Slidanet.applicationContext)
-        relativeLayout.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
-                                                                  RelativeLayout.LayoutParams.MATCH_PARENT )
 
         when (shareMode) {
 
-            ShareModeType.SlideXYZ -> {
+            SlidanetSharingStyleType.Slide -> {
 
                 Slidanet.editorContent?.let {
 
@@ -1125,15 +1138,15 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                 this.layoutParams = it
             }
 
-            relativeLayout.addView(this)
+            Slidanet.relativeLayout?.addView(this)
 
-            if (shareMode != ShareModeType.SlidePeekSlide &&
-                shareMode != ShareModeType.SlidePeekDefine &&
-                shareMode != ShareModeType.SlidePeekSlide &&
-                shareMode != ShareModeType.SlidePixSlide) {
+            if (shareMode != SlidanetSharingStyleType.PeekSlide &&
+                shareMode != SlidanetSharingStyleType.PeekDefine &&
+                shareMode != SlidanetSharingStyleType.PeekSlide &&
+                shareMode != SlidanetSharingStyleType.PixSlide) {
 
-                relativeLayout.addView(Slidanet.referenceView)
-                Slidanet.editorContent?.addView(relativeLayout)
+                Slidanet.relativeLayout?.addView(Slidanet.referenceView)
+                Slidanet.editorContent?.addView(Slidanet.relativeLayout)
             }
 
             Slidanet.editorContent?.addView(Slidanet.editorControl)
@@ -1550,12 +1563,12 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         return hideEnabled
     }
 
-    override fun setShareMode(mode: ShareModeType) {
+    override fun setShareMode(mode: SlidanetSharingStyleType) {
 
         shareMode = mode
     }
 
-    override fun getShareMode(): ShareModeType {
+    override fun getShareMode(): SlidanetSharingStyleType {
 
         return shareMode
     }

@@ -32,6 +32,11 @@ class Slida: SlidanetResponseHandler {
                 handleEditViewResponse(responseData)
             }
 
+            SlidanetRequestType.DoneEditContent -> {
+
+                handleDoneEditContent(responseData)
+            }
+
             else -> {}
         }
     }
@@ -118,6 +123,41 @@ class Slida: SlidanetResponseHandler {
 
                 SocialApp.slidanetCallbacks.addEditor(slidanetResponseData.editorView!!)
             }
+
+            else -> {}
+        }
+    }
+
+    private fun handleDoneEditContent(slidanetResponseData: SlidanetResponseData) {
+
+        when (slidanetResponseData.responseCode) {
+
+            SlidanetResponseType.DoneEditingContentAddress -> {
+
+                // no update during editing
+
+                    val contentAddress = slidanetResponseData.requestInfo.getString(SlidanetConstants.slidanet_content_address)
+
+                    val response = Slidanet.commitContentEditing(contentAddress)
+
+                    val check = "test"
+                    // commit
+
+                    // set share mode
+
+                // update during editing
+
+                    // cancel
+
+                    // commit
+
+                    // set share mode
+
+
+
+            }
+
+            else -> {}
         }
     }
 }

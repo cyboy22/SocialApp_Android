@@ -19,10 +19,13 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                                                                 GestureDetector.OnDoubleTapListener
 {
 
+    /*
     private var availableRight: Float = 0f
     private var availableLeft: Float = 0f
     private var availableUp: Float = 0f
     private var availableDown: Float = 0f
+
+     */
     private var boxStartPosition = Point(0,0)
     private var boxEndPosition = Point(0,0)
     private var currentTouchPosition = Point(0, 0)
@@ -54,11 +57,13 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     }
 
     internal fun initialize() {
-
+/*
         availableRight = 0f
         availableLeft = 0f
         availableUp = 0f
         availableDown = 0f
+
+ */
         boxStartPosition = Point(0,0)
         boxEndPosition = Point(0,0)
         currentTouchPosition = Point(0, 0)
@@ -80,6 +85,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
     }
 
+    /*
     private fun initializeAvailableMovementLeftToRight(slidanetObject: SlidanetObject) {
 
         availableUp = 0f
@@ -208,7 +214,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             }
         }
     }
-
+*/
     override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
 
         Slidanet.rendererHandler.post {
@@ -225,7 +231,18 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                         MotionEvent.ACTION_UP,
                         MotionEvent.ACTION_POINTER_UP -> processPointerUp(p1)
 
-                        MotionEvent.ACTION_MOVE -> processMove(p1)
+                        MotionEvent.ACTION_MOVE -> {
+
+                            val a = firstTapRegistered
+                            val b = firstContactTime
+                            val c = p1.eventTime
+
+                            if (p1.eventTime - firstContactTime > .5f * Constants.doubleTapInterval ) {
+
+                                processMove(p1)
+
+                            }
+                        }
 
                         else -> {}
                     }
@@ -242,6 +259,24 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
             val x = it.getX(0).toInt()
             val y = it.getY(0).toInt()
+
+            //firstContactTime = event.downTime
+
+            /*
+            if (!firstTapRegistered) {
+
+                firstContactTime = event.downTime
+
+            } else {
+
+                secondContactTime = event.downTime
+            }
+
+            if (secondContactTime -firstContactTime <= Constants.doubleTapInterval) {
+
+                firstTapRegistered = false
+            }
+            */
 
             currentTouchPosition.x = x
             currentTouchPosition.y = y
@@ -289,23 +324,28 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
         event?.let {
 
-            movingView = false
+            if (movingView) {
+
+                movingView = false
+                firstContactTime = 0
+                firstTapRegistered = false
+                secondContactTime = 0
+                secondTapRegistered = false
+                return
+            }
 
             if (!firstTapRegistered) {
 
-                if (it.downTime - firstContactTime < 500) {
+                firstTapRegistered = true
 
-                    firstTapRegistered = true
-                }
             } else {
 
-                if (it.downTime - secondContactTime < 500) {
+                secondTapRegistered = true
 
-                    secondTapRegistered = true
-                }
             }
 
-            if (firstTapRegistered && secondTapRegistered && (secondContactTime - firstContactTime) < 700) {
+            if (firstTapRegistered && secondTapRegistered &&
+                (secondContactTime - firstContactTime) < Constants.doubleTapInterval) {
 
                 firstContactTime = 0
                 firstTapRegistered = false
@@ -328,7 +368,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                             val request = JSONObject()
                             request.put(SlidanetConstants.slidanet_content_address, Slidanet.editorContentAddress)
-                            val response = SlidanetResponseData(requestCode = SlidanetRequestType.EditContent,
+                            val response = SlidanetResponseData(requestCode = SlidanetRequestType.DoneEditContent,
                                                                 requestInfo = request,
                                                                 responseCode = SlidanetResponseType.DoneEditingContentAddress)
                             Slidanet.mainHandler?.post { Slidanet.slidanetResponseHandler.slidanetResponse(response) }
@@ -358,6 +398,8 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
             boxEndPosition.x = event.getX(0).toInt()
             boxEndPosition.y = event.getY(0).toInt()
+
+            movingView = false
         }
     }
 
@@ -370,6 +412,11 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             boxEndPosition.x = currentTouchPosition.x
             boxEndPosition.y = currentTouchPosition.y
             boxEndPosition.y = controlFrame.y - currentTouchPosition.y
+
+            firstContactTime = 0
+            secondContactTime = 0
+            firstTapRegistered = false
+            secondTapRegistered = false
 
             if (Slidanet.followerTakeInProgress) {
 
@@ -394,15 +441,15 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     when (followerObject.getShareMode()) {
 
-                        ShareModeType.SlideXYZ -> processMoveXYZ()
+                        SlidanetSharingStyleType.Slide -> processMoveXYZ()
 
-                        ShareModeType.SlidePeekDefine -> processDefinePeek()
+                        SlidanetSharingStyleType.PeekDefine -> processDefinePeek()
 
-                        ShareModeType.SlidePeekSlide -> processMovePeek()
+                        SlidanetSharingStyleType.PeekSlide -> processMovePeek()
 
-                        ShareModeType.SlidePixDefine -> processDefinePix()
+                        SlidanetSharingStyleType.PixDefine -> processDefinePix()
 
-                        ShareModeType.SlidePixSlide -> processMovePix()
+                        SlidanetSharingStyleType.PixSlide -> processMovePix()
 
                         else -> {}
                     }
@@ -416,20 +463,25 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     when (ownerObject.getShareMode()) {
 
-                        ShareModeType.SlideXYZ -> processMoveXYZ()
+                        SlidanetSharingStyleType.Slide -> processMoveXYZ()
 
-                        ShareModeType.SlidePeekDefine -> processDefinePeek()
+                        SlidanetSharingStyleType.PeekDefine -> processDefinePeek()
 
-                        ShareModeType.SlidePeekSlide -> processMovePeek()
+                        SlidanetSharingStyleType.PeekSlide -> processMovePeek()
 
-                        ShareModeType.SlidePixDefine -> processDefinePix()
+                        SlidanetSharingStyleType.PixDefine -> processDefinePix()
 
-                        ShareModeType.SlidePixSlide -> processMovePix()
+                        SlidanetSharingStyleType.PixSlide -> processMovePix()
 
                         else -> {}
                     }
                 }
             }
+
+            firstTapRegistered = false
+            secondTapRegistered = false
+            firstContactTime = 0
+            secondContactTime = 0
         }
     }
 
@@ -1105,6 +1157,15 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     lastTouchPosition.x = currentTouchPosition.x
                     lastTouchPosition.y = currentTouchPosition.y
 
+                    boxBeginX += viewNormalizedDeltaX
+                    if (boxBeginX < 0f) boxBeginX = 0f
+                    if (boxBeginX > 1f - boxWidth) boxBeginX = 1f - boxWidth
+
+                    boxBeginY -= viewNormalizedDeltaY
+                    if (boxBeginY < 0f) boxBeginY = 0f
+                    if (boxBeginY > 1f - boxHeight) boxBeginY = 1f - boxHeight
+
+                    /*
                     if (viewNormalizedDeltaX > 0f) {
 
                         if (availableRight <= viewNormalizedDeltaX.absoluteValue) {
@@ -1177,6 +1238,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                         }
                     }
+                    */
 
                     if (boxBeginX != lastBoxBeginX || boxBeginY != lastBoxBeginY) {
 
@@ -1248,17 +1310,12 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                 val boxWidth = it.getBoxEndX() - it.getBoxBeginX()
                 val boxHeight = it.getBoxEndY() - it.getBoxBeginY()
-                var boxBeginX = it.getBoxBeginX()
-                var boxEndX = it.getBoxEndX()
-                var boxBeginY = it.getBoxBeginY()
-                var boxEndY = it.getBoxEndY()
 
                 if (boxWidth > 0 && boxHeight > 0) {
 
                     val a = boxWidth / boxHeight
 
                     val scaleDeltaX = boxWidth * a
-                    val scaleDeltaY = boxWidth / a
 
                     if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
                         lastTouchPosition = currentTouchPosition
@@ -1267,49 +1324,14 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     val viewNormalizedDeltaX =
                         ((currentTouchPosition.x - lastTouchPosition.x).toFloat() / controlFrame.x.toFloat()) * scaleDeltaX
 
-                    val viewNormalizedDeltaY =
-                        ((currentTouchPosition.y - lastTouchPosition.y).toFloat() / controlFrame.y.toFloat()) * scaleDeltaY
-
                     lastTouchPosition.x = currentTouchPosition.x
                     lastTouchPosition.y = currentTouchPosition.y
 
-                    var p = it.getPixelWidth()
                     var dynamicPixelWidth = 1f
 
-                    if (viewNormalizedDeltaX > 0f) {
-
-                        if (availableRight == 0f) {
-
-                            dynamicPixelWidth = 1f//getPixelWidth()
-
-                        } else if (availableRight <= viewNormalizedDeltaX.absoluteValue) {
-
-                            availableLeft += availableRight
-                            availableRight = 0f
-                            dynamicPixelWidth = 1f//getPixelWidth()
-
-                        } else if (availableRight > viewNormalizedDeltaX.absoluteValue) {
-
-                            availableRight -= viewNormalizedDeltaX
-                            availableLeft = 1f - availableRight
-                            dynamicPixelWidth = p.toFloat()*availableRight
-
-                        }
-                    } else if (viewNormalizedDeltaX < 0f) {
-
-                        if (availableLeft <= viewNormalizedDeltaX.absoluteValue) {
-
-                            availableLeft = 0f
-                            availableRight = 1f - availableLeft
-                            dynamicPixelWidth = p.toFloat()
-
-                        } else if (availableLeft > viewNormalizedDeltaX.absoluteValue) {
-
-                            availableRight -= viewNormalizedDeltaX
-                            availableLeft = 1f - availableRight
-                            dynamicPixelWidth = p.toFloat()*availableRight
-                        }
-                    }
+                    dynamicPixelWidth = it.getPixelWidth() + viewNormalizedDeltaX * scaleDeltaX
+                    if (dynamicPixelWidth < 0) dynamicPixelWidth = 0f
+                    if (dynamicPixelWidth > Constants.defaultPixelWidth) dynamicPixelWidth = Constants.defaultPixelWidth.toFloat()
 
                     if (dynamicPixelWidth != lastPixelWidth) {
 
@@ -1355,6 +1377,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     private fun processDefinePix() {
 
         if (boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) {
+
             return
         }
 
@@ -1365,6 +1388,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     private fun processMovePix() {
 
         if (boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) {
+
             return
         }
 

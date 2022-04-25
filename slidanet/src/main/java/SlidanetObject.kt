@@ -17,8 +17,8 @@ internal interface SlidanetObject {
     fun setHideEnabled(give: Boolean)
     fun getGiveEnabled(): Boolean
     fun getHideEnabled(): Boolean
-    fun setShareMode(mode: ShareModeType)
-    fun getShareMode(): ShareModeType
+    fun setShareMode(mode: SlidanetSharingStyleType)
+    fun getShareMode(): SlidanetSharingStyleType
     fun setPixPercentage(value: Float)
     fun getPixPercentage(): Float
     fun setShaderName(name: String)

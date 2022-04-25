@@ -178,7 +178,7 @@ internal class SlidanetServer(): SlidanetRequest {
     }
 
     override fun distributeTranslation(contentAddress: String,
-                                       shareMode: ShareModeType,
+                                       shareMode: SlidanetSharingStyleType,
                                        x: Float,
                                        y: Float,
                                        z: Float) {
@@ -196,7 +196,7 @@ internal class SlidanetServer(): SlidanetRequest {
     }
 
     override fun distributeMaskBox(contentAddress: String,
-                                   shareMode: ShareModeType,
+                                   shareMode: SlidanetSharingStyleType,
                                    boxBeginX: Float,
                                    boxBeginY: Float,
                                    boxEndX: Float,
@@ -216,7 +216,7 @@ internal class SlidanetServer(): SlidanetRequest {
     }
 
     override fun distributePixelWidth(contentAddress: String,
-                                      shareMode: ShareModeType,
+                                      shareMode: SlidanetSharingStyleType,
                                       pixelWidth: Int) {
 
         SlidanetMessage(SlidanetMessageType.MoveContentRequest).apply {
@@ -235,7 +235,7 @@ internal class SlidanetServer(): SlidanetRequest {
 
     override fun setShareModePix(requestId: Int,
                                  contentAddress: String,
-                                 shareMode: ShareModeType,
+                                 shareMode: SlidanetSharingStyleType,
                                  boxBeginX: Float,
                                  boxBeginY: Float,
                                  boxEndX: Float,
@@ -259,7 +259,7 @@ internal class SlidanetServer(): SlidanetRequest {
 
     override fun setShareModePeek(requestId: Int,
                                   contentAddress: String,
-                                  shareMode: ShareModeType,
+                                  shareMode: SlidanetSharingStyleType,
                                   boxBeginX: Float,
                                   boxBeginY: Float,
                                   boxEndX: Float,
@@ -281,7 +281,7 @@ internal class SlidanetServer(): SlidanetRequest {
 
     override fun setShareModeSlide(requestId: Int,
                                    contentAddress: String,
-                                   shareMode: ShareModeType,
+                                   shareMode: SlidanetSharingStyleType,
                                    x: Float,
                                    y: Float,
                                    z: Float) {

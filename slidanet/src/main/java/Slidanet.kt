@@ -12,6 +12,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.MimeTypeMap
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import org.json.JSONException
@@ -55,6 +56,7 @@ object Slidanet {
     internal lateinit var applicationContext: Context
     internal var editorContent: SlidanetEditorContent? = null
     internal var editorControl: SlidanetContentControl? = null
+    internal var relativeLayout: RelativeLayout? = null
     internal lateinit var referenceView: SlidanetImage
     private lateinit var border: SlidanetBorder
     internal var editingContent = false
@@ -125,7 +127,10 @@ object Slidanet {
 
                     editorContent = SlidanetEditorContent(applicationContext)
                     editorContent!!.id = View.generateViewId()
-
+                    relativeLayout = RelativeLayout(applicationContext)
+                    relativeLayout?.id = View.generateViewId()
+                    relativeLayout?.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
+                                                                               RelativeLayout.LayoutParams.MATCH_PARENT )
                     val border = GradientDrawable()
                     border.setColor(Color.argb(0,1,1,1))
                     border.setStroke(2, -0x1000000) //black border with full opacity
@@ -204,7 +209,8 @@ object Slidanet {
     fun connectContent(slidanetContentAddress: String,
                        appContentPath: String = "",
                        videoStartTime: Float = 0f,
-                       updateDuringEditing: Boolean = false) : SlidanetResponseType {
+                       updateDuringEditing: Boolean = false,
+                       ) : SlidanetResponseType {
 
         try {
             if (isConnected()) {
@@ -450,7 +456,7 @@ object Slidanet {
     }
 
     fun setSharingStyle(slidanetContentAddress: String,
-                        slidanetSharingStyle: SlidanetSharingStyle,
+                        slidanetSharingStyle: SlidanetSharingStyleType,
                         x: Float = 1f,
                         y: Float = 0f,
                         //z: Float = 0f,
@@ -471,11 +477,10 @@ object Slidanet {
 
                 when (slidanetSharingStyle) {
 
-                    SlidanetSharingStyle.Slide -> {
+                    SlidanetSharingStyleType.Slide -> {
 
-                        val currentShareStyle = it.getShareMode()
+                        if (it.getShareMode() == slidanetSharingStyle) {
 
-                        if (currentShareStyle == ShareModeType.SlideXYZ) {
                             return SlidanetResponseType.AlreadyInSlideMode
                         }
 
@@ -491,7 +496,7 @@ object Slidanet {
 
                         rendererHandler.post {
 
-                            it.setShareMode(ShareModeType.SlideXYZ)
+                            it.setShareMode(SlidanetSharingStyleType.Slide)
                             it.setShareTranslationParameters(x, y, 1f)
                             it.setShareBoxParameters(0f, 0f, 0f, 0f)
                             it.initializeVertices(x, y)
@@ -504,22 +509,27 @@ object Slidanet {
 
                         server.setShareModeSlide(requestId = requestId,
                                                  contentAddress = slidanetContentAddress,
-                                                 shareMode = ShareModeType.SlideXYZ,
+                                                 shareMode = slidanetSharingStyle,
                                                  x = x,
                                                  y = y,
                                                  z = 1f)
                     }
 
-                    SlidanetSharingStyle.Peek -> {
+                    SlidanetSharingStyleType.PeekDefine,
+                    SlidanetSharingStyleType.PeekSlide -> {
 
-                        val currentShareStyle = it.getShareMode()
+                        if (it.getShareMode() == slidanetSharingStyle && it.getShareMode() == SlidanetSharingStyleType.PeekDefine) {
 
-                        if (currentShareStyle == ShareModeType.SlidePeekSlide ||
-                            currentShareStyle == ShareModeType.SlidePeekDefine) {
-
-                            return SlidanetResponseType.AlreadyInPeekMode
+                            return SlidanetResponseType.AlreadyInPeekDefineMode
 
                         }
+
+                        if (it.getShareMode() == slidanetSharingStyle && it.getShareMode() == SlidanetSharingStyleType.PeekSlide) {
+
+                            return SlidanetResponseType.AlreadyInPeekSlideMode
+
+                        }
+
                         if (boxBeginX.absoluteValue > 1f || boxEndX.absoluteValue > 1f) return SlidanetResponseType.InvalidSlideParameters
                         if (boxBeginY.absoluteValue > 1f || boxEndY.absoluteValue > 1f) return SlidanetResponseType.InvalidSlideParameters
                         if (boxEndX <= boxBeginX || boxEndY <= boxBeginY) return SlidanetResponseType.InvalidSlideParameters
@@ -533,7 +543,7 @@ object Slidanet {
                                                                    SlidanetResponseType.Undefined)
                         rendererHandler.post {
 
-                            it.setShareMode(ShareModeType.SlidePeekDefine)
+                            it.setShareMode(slidanetSharingStyle)
                             it.setShareTranslationParameters(0f,0f,0f)
                             it.initializeVertices(0f,0f)
                             it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
@@ -546,7 +556,7 @@ object Slidanet {
 
                         server.setShareModePeek(requestId = requestId,
                                                 contentAddress = it.getContentAddress(),
-                                                shareMode = ShareModeType.SlidePeekSlide,
+                                                shareMode = it.getShareMode(),
                                                 boxBeginX = boxBeginX,
                                                 boxBeginY = boxBeginY,
                                                 boxEndX = boxEndX,
@@ -554,13 +564,18 @@ object Slidanet {
 
                     }
 
-                    SlidanetSharingStyle.Pix -> {
+                    SlidanetSharingStyleType.PixDefine,
+                    SlidanetSharingStyleType.PixSlide -> {
 
-                        val currentShareStyle = it.getShareMode()
-                        if (currentShareStyle == ShareModeType.SlidePixSlide ||
-                            currentShareStyle == ShareModeType.SlidePixDefine) {
+                        if (it.getShareMode() == slidanetSharingStyle && it.getShareMode() == SlidanetSharingStyleType.PixDefine) {
 
-                            return SlidanetResponseType.AlreadyInPixMode
+                            return SlidanetResponseType.AlreadyInPixDefineMode
+
+                        }
+
+                        if (it.getShareMode() == slidanetSharingStyle && it.getShareMode() == SlidanetSharingStyleType.PixSlide) {
+
+                            return SlidanetResponseType.AlreadyInPixSlideMode
 
                         }
 
@@ -578,11 +593,12 @@ object Slidanet {
                                                                    SlidanetResponseType.Undefined)
                         rendererHandler.post {
 
-                            it.setShareMode(ShareModeType.SlidePixDefine)
+                            it.setShareMode(slidanetSharingStyle)
                             it.setShareTranslationParameters(0f,0f,0f)
                             it.initializeVertices(0f,0f)
                             it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                             it.setPixelWidth(pixelPercentage.toInt())
+
                             if (editingState == SlidanetEditingStateType.Active) {
 
                                 mainHandler?.post { it.setupEditor(SlidanetEditingInitiatorType.LocalShareStyleUpdate) }
@@ -591,7 +607,7 @@ object Slidanet {
 
                         server.setShareModePix(requestId = requestId,
                                                contentAddress = it.getContentAddress(),
-                                               shareMode = ShareModeType.SlidePixSlide,
+                                               shareMode = it.getShareMode(),
                                                boxBeginX = boxBeginX,
                                                boxBeginY = boxBeginY,
                                                boxEndX = boxEndX,
@@ -1287,7 +1303,7 @@ object Slidanet {
 
                                                 val shareMode = requireNotNull(msg.getInteger(Constants.nameWidth))
 
-                                                if (shareMode < 0 || shareMode >= ShareModeType.MaxValue.ordinal) {
+                                                if (shareMode < 0 || shareMode >= SlidanetSharingStyleType.MaxValue.ordinal) {
 
                                                     handleInternalError()
                                                 }
@@ -1735,14 +1751,14 @@ object Slidanet {
                 val contentAddress = requireNotNull(this.getString(contentAddressLength))
                 requireNotNull(this.getInteger(Constants.nameWidth)).let { rc_it ->
 
-                    if (rc_it < 0 || rc_it >= ShareModeType.MaxValue.ordinal) {
+                    if (rc_it < 0 || rc_it >= SlidanetSharingStyleType.MaxValue.ordinal) {
 
                         handleInternalError()
                     }
 
-                    when (ShareModeType.values()[rc_it]) {
+                    when (SlidanetSharingStyleType.values()[rc_it]) {
 
-                        ShareModeType.SlideXYZ -> {
+                        SlidanetSharingStyleType.Slide -> {
 
                             val x = requireNotNull(this.getFloat())
                             val y = requireNotNull(this.getFloat())
@@ -1766,8 +1782,8 @@ object Slidanet {
                                                     it.setShareTranslationParameters(x,y,z)
                                                     it.initializeVertices(x,y)
                                                     it.setDisplayNeedsUpdate(true)
-                                                    editorControl?.initializeAvailableMovement(contentAddress,
-                                                                                               it.getContentAddressOwner())
+                                                    //editorControl?.initializeAvailableMovement(contentAddress,
+                                                    //                                           it.getContentAddressOwner())
                                                 }
                                             }
                                         }
@@ -1779,7 +1795,7 @@ object Slidanet {
                                             it.setShareTranslationParameters(x,y,z)
                                             it.initializeVertices(x,y)
                                             it.setDisplayNeedsUpdate(true)
-                                            editorControl?.initializeAvailableMovement(contentAddress,it.getContentAddressOwner())
+                                            //editorControl?.initializeAvailableMovement(contentAddress,it.getContentAddressOwner())
                                         }
                                     }
 
@@ -1790,7 +1806,7 @@ object Slidanet {
                                         it.setShareTranslationParameters(x,y,z)
                                         it.initializeVertices(x, y)
                                         it.setDisplayNeedsUpdate(true)
-                                        editorControl?.initializeAvailableMovement(contentAddress,it.getContentAddressOwner())
+                                        //editorControl?.initializeAvailableMovement(contentAddress,it.getContentAddressOwner())
                                     }
                                 }
 
@@ -1800,8 +1816,8 @@ object Slidanet {
                             }
                         }
 
-                        ShareModeType.SlidePeekDefine,
-                        ShareModeType.SlidePeekSlide -> {
+                        SlidanetSharingStyleType.PeekDefine,
+                        SlidanetSharingStyleType.PeekSlide -> {
 
                             val boxBeginX = requireNotNull(this.getFloat())
                             val boxBeginY = requireNotNull(this.getFloat())
@@ -1824,8 +1840,6 @@ object Slidanet {
 
                                                     it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                                     it.setDisplayNeedsUpdate(true)
-                                                    editorControl?.initializeAvailableMovement(contentAddress,
-                                                                                               it.getContentAddressOwner())
                                                 }
                                             }
                                         }
@@ -1836,8 +1850,6 @@ object Slidanet {
 
                                             it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                             it.setDisplayNeedsUpdate(true)
-                                            editorControl?.initializeAvailableMovement(contentAddress,
-                                                                                       it.getContentAddressOwner())
                                         }
                                     }
                                 } else {
@@ -1846,15 +1858,15 @@ object Slidanet {
 
                                         it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                         it.setDisplayNeedsUpdate(true)
-                                        editorControl?.initializeAvailableMovement(it.getContentAddress(),
-                                                                                   it.getContentAddressOwner())
+                                        //editorControl?.initializeAvailableMovement(it.getContentAddress(),
+                                         //                                          it.getContentAddressOwner())
                                     }
                                 }
                             }
                         }
 
-                        ShareModeType.SlidePixDefine,
-                        ShareModeType.SlidePixSlide -> {
+                        SlidanetSharingStyleType.PixDefine,
+                        SlidanetSharingStyleType.PixSlide -> {
 
                             val boxBeginX = requireNotNull(this.getFloat())
                             val boxBeginY = requireNotNull(this.getFloat())
@@ -1880,8 +1892,6 @@ object Slidanet {
                                                     it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                                     it.setPixelWidth(pixelWidth.toInt())
                                                     it.setDisplayNeedsUpdate(true)
-                                                    editorControl?.initializeAvailableMovement(contentAddress,
-                                                                                               it.getContentAddressOwner())
                                                 }
                                             }
                                         }
@@ -1892,8 +1902,6 @@ object Slidanet {
                                             it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                             it.setPixelWidth(pixelWidth.toInt())
                                             it.setDisplayNeedsUpdate(true)
-                                            editorControl?.initializeAvailableMovement(contentAddress,
-                                                                                       it.getContentAddressOwner())
                                         }
                                     }
                                 } else {
@@ -1903,8 +1911,6 @@ object Slidanet {
                                         it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                         it.setPixelWidth(pixelWidth.toInt())
                                         it.setDisplayNeedsUpdate(true)
-                                        editorControl?.initializeAvailableMovement(contentAddress,
-                                                                                   it.getContentAddressOwner())
                                     }
                                 }
                             }
@@ -1977,14 +1983,14 @@ object Slidanet {
 
                 requireNotNull(this.getInteger(Constants.nameWidth)).let { rc_it ->
 
-                    if (rc_it < 0 || rc_it >= ShareModeType.MaxValue.ordinal) {
+                    if (rc_it < 0 || rc_it >= SlidanetSharingStyleType.MaxValue.ordinal) {
 
                         handleInternalError()
                     }
 
-                    when (ShareModeType.values()[rc_it]) {
+                    when (SlidanetSharingStyleType.values()[rc_it]) {
 
-                        ShareModeType.SlideXYZ -> {
+                        SlidanetSharingStyleType.Slide -> {
 
                             val x = requireNotNull(getFloat())
                             val y = requireNotNull(getFloat())
@@ -2005,7 +2011,6 @@ object Slidanet {
                                                 contentEditor.setPixEnabled(false)
                                                 contentEditor.setPeekEnabled(false)
                                                 contentEditor.setDisplayNeedsUpdate(true)
-                                                editorControl?.initializeAvailableMovement(contentAddress, it.getContentAddressOwner())
 
                                                 if (it.getUpdateDuringEdit()) {
 
@@ -2028,7 +2033,6 @@ object Slidanet {
                                             it.setPixEnabled(false)
                                             it.setPeekEnabled(false)
                                             it.setDisplayNeedsUpdate(true)
-                                            editorControl?.initializeAvailableMovement(contentAddress, it.getContentAddressOwner())
 
                                         }
                                     }
@@ -2052,8 +2056,8 @@ object Slidanet {
                             }
                         }
 
-                        ShareModeType.SlidePeekDefine,
-                        ShareModeType.SlidePeekSlide -> {
+                        SlidanetSharingStyleType.PeekDefine,
+                        SlidanetSharingStyleType.PeekSlide -> {
 
                             val boxBeginX = requireNotNull(getFloat())
                             val boxBeginY = requireNotNull(getFloat())
@@ -2075,7 +2079,6 @@ object Slidanet {
                                                 contentEditor.setPixEnabled(false)
                                                 contentEditor.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                                 contentEditor.setDisplayNeedsUpdate(true)
-                                                editorControl?.initializeAvailableMovement(contentAddress, it.getContentAddressOwner())
 
                                                 if (it.getUpdateDuringEdit()) {
 
@@ -2115,8 +2118,8 @@ object Slidanet {
                             }
                         }
 
-                        ShareModeType.SlidePixDefine,
-                        ShareModeType.SlidePixSlide -> {
+                        SlidanetSharingStyleType.PixDefine,
+                        SlidanetSharingStyleType.PixSlide -> {
 
                             val boxBeginX = requireNotNull(this.getFloat())
                             val boxBeginY = requireNotNull(this.getFloat())
@@ -2139,7 +2142,6 @@ object Slidanet {
                                                 contentEditor.setPeekEnabled(false)
                                                 contentEditor.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                                 contentEditor.setPixelWidth(pixelWidth.toInt())
-                                                editorControl?.initializeAvailableMovement(contentAddress, it.getContentAddressOwner())
 
                                                 if (it.getUpdateDuringEdit()) {
 
@@ -2252,8 +2254,8 @@ object Slidanet {
                     val giveEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
                     val hideEnabled = requireNotNull(this.getInteger(Constants.flagWidth)).bool
                     val shareMode = requireNotNull(this.getInteger(Constants.nameWidth))
-                    if (shareMode < 0 || shareMode >= ShareModeType.MaxValue.ordinal) handleInternalError()
-                    val shareModeType = ShareModeType.values()[shareMode]
+                    if (shareMode < 0 || shareMode >= SlidanetSharingStyleType.MaxValue.ordinal) handleInternalError()
+                    val shareModeType = SlidanetSharingStyleType.values()[shareMode]
                     val translationX = requireNotNull(this.getFloat())
                     val translationY = requireNotNull(this.getFloat())
                     val translationZ = requireNotNull(this.getFloat())
@@ -2269,15 +2271,17 @@ object Slidanet {
                     if (contentFilter < 0 || contentFilter >= SlidanetContentFilterType.MaxValue.ordinal) handleInternalError()
                     val contentFilterType = SlidanetContentFilterType.values()[contentFilter]
 
+
+
                     rendererHandler.post {
 
                         when (shareModeType) {
 
-                            ShareModeType.SlidePixSlide,
-                            ShareModeType.SlidePixDefine -> it.setPixEnabled(true)
+                            SlidanetSharingStyleType.PixSlide,
+                            SlidanetSharingStyleType.PixDefine -> it.setPixEnabled(true)
 
-                            ShareModeType.SlidePeekSlide,
-                            ShareModeType.SlidePeekDefine -> it.setPeekEnabled(true)
+                            SlidanetSharingStyleType.PeekSlide,
+                            SlidanetSharingStyleType.PeekDefine -> it.setPeekEnabled(true)
 
                             else -> {}
                         }
@@ -2293,6 +2297,10 @@ object Slidanet {
                         it.setRedMaskColor(redMaskColor)
                         it.setBlueMaskColor(blueMaskColor)
                         it.setGreenMaskColor(greenMaskColor)
+
+                        if (Slidanet.slidaName == contentAddressOwner) {
+
+                        }
 
                         if (it.getTextureViewReady()) {
                             it.setDisplayNeedsUpdate(true)

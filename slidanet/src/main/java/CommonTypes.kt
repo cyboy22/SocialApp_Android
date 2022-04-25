@@ -18,18 +18,19 @@
                                  SetContentFilter,
                                  HideContent,
                                  UnhideContent,
+                                 DoneEditContent,
                                  MaxValue }
 
-enum class SlidanetSharingStyle { Slide,
-                                  Peek,
-                                  Pix }
+enum class SlidanetSharingStyleType { Slide,
+                                      PeekDefine,
+                                      PeekSlide,
+                                      PixDefine,
+                                      PixSlide,
+                                      MaxValue }
 
-internal enum class ShareModeType { SlideXYZ,
-                                    SlidePeekDefine,
-                                    SlidePeekSlide,
-                                    SlidePixDefine,
-                                    SlidePixSlide,
-                                    MaxValue }
+ enum class SlidanetActionType { AnimateIntoView,
+                                 AnimateOutOfView
+ }
 
 enum class SlidanetVisibilityPreferenceType { RequestLess,
                                               Neutral,
@@ -148,8 +149,10 @@ enum class SlidanetResponseType { Ok,
                                   ContentUnhidden,
                                   FilterSet,
                                   AlreadyInSlideMode,
-                                  AlreadyInPeekMode,
-                                  AlreadyInPixMode,
+                                  AlreadyInPeekDefineMode,
+                                  AlreadyInPeekSlideMode,
+                                  AlreadyInPixDefineMode,
+                                  AlreadyInPixSlideMode,
                                   MaxValue }
 
 enum class SlidanetContentType { Image,

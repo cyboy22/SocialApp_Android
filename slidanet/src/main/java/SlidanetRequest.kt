@@ -9,22 +9,22 @@ internal interface SlidanetRequest {
     fun disconnectFromNetwork(requestId: Int)
     fun connectContent(requestId: Int, contentAddress: String)
     fun distributeTranslation(contentAddress: String,
-                              shareMode: ShareModeType,
+                              shareMode: SlidanetSharingStyleType,
                               x: Float,
                               y: Float,
                               z: Float)
     fun distributeMaskBox(contentAddress: String,
-                          shareMode: ShareModeType,
+                          shareMode: SlidanetSharingStyleType,
                           boxBeginX: Float,
                           boxBeginY: Float,
                           boxEndX: Float,
                           boxEndY: Float)
     fun distributePixelWidth(contentAddress: String,
-                             shareMode: ShareModeType,
+                             shareMode: SlidanetSharingStyleType,
                              pixelWidth: Int)
     fun setShareModePix(requestId: Int,
                         contentAddress: String,
-                        shareMode: ShareModeType,
+                        shareMode: SlidanetSharingStyleType,
                         boxBeginX: Float,
                         boxBeginY: Float,
                         boxEndX: Float,
@@ -32,14 +32,14 @@ internal interface SlidanetRequest {
                         pixWidth: Int)
     fun setShareModePeek(requestId: Int,
                          contentAddress: String,
-                         shareMode: ShareModeType,
+                         shareMode: SlidanetSharingStyleType,
                          boxBeginX: Float,
                          boxBeginY: Float,
                          boxEndX: Float,
                          boxEndY: Float)
     fun setShareModeSlide(requestId: Int,
                           contentAddress: String,
-                          shareMode: ShareModeType,
+                          shareMode: SlidanetSharingStyleType,
                           x: Float,
                           y: Float,
                           z: Float)

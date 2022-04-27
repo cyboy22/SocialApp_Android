@@ -140,7 +140,7 @@ class SocialServer {
         }.send()
     }
 
-    fun authenticateMemberRequest() {
+    private fun authenticateMemberRequest() {
 
         SocialAppMessage(MessageType.AuthenticateMemberRequest).apply {
 

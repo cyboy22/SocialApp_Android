@@ -231,18 +231,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                         MotionEvent.ACTION_UP,
                         MotionEvent.ACTION_POINTER_UP -> processPointerUp(p1)
 
-                        MotionEvent.ACTION_MOVE -> {
-
-                            val a = firstTapRegistered
-                            val b = firstContactTime
-                            val c = p1.eventTime
-
-                            if (p1.eventTime - firstContactTime > .5f * Constants.doubleTapInterval ) {
-
-                                processMove(p1)
-
-                            }
-                        }
+                        MotionEvent.ACTION_MOVE -> processMove(p1)
 
                         else -> {}
                     }
@@ -259,24 +248,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
             val x = it.getX(0).toInt()
             val y = it.getY(0).toInt()
-
-            //firstContactTime = event.downTime
-
-            /*
-            if (!firstTapRegistered) {
-
-                firstContactTime = event.downTime
-
-            } else {
-
-                secondContactTime = event.downTime
-            }
-
-            if (secondContactTime -firstContactTime <= Constants.doubleTapInterval) {
-
-                firstTapRegistered = false
-            }
-            */
 
             currentTouchPosition.x = x
             currentTouchPosition.y = y
@@ -308,98 +279,14 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             subjectOrigin.y = (controlFrame.y - (viewPosition[1] + subjectFrame.y)+locationInView[1]).toFloat().toInt()
             subjectDiagonal.y = subjectOrigin.y + subjectFrame.y
 
-
-            if (!firstTapRegistered) {
-
-                firstContactTime = event.downTime
-
-            } else {
-
-                secondContactTime = event.downTime
-            }
         }
+
     }
 
     private fun processPointerUp(event: MotionEvent?) {
 
         event?.let {
 
-            if (movingView) {
-
-                movingView = false
-                firstContactTime = 0
-                firstTapRegistered = false
-                secondContactTime = 0
-                secondTapRegistered = false
-                return
-            }
-
-            if (!firstTapRegistered) {
-
-                firstTapRegistered = true
-
-            } else {
-
-                secondTapRegistered = true
-
-            }
-
-            if (firstTapRegistered && secondTapRegistered &&
-                (secondContactTime - firstContactTime) < Constants.doubleTapInterval) {
-
-                firstContactTime = 0
-                firstTapRegistered = false
-                secondContactTime = 0
-                secondTapRegistered = false
-
-                if (Slidanet.followerTakeInProgress) {
-
-                    Slidanet.mainHandler?.post {(Slidanet.editorContent?.parent as ViewManager).removeView(Slidanet.editorContent)}
-
-                    Slidanet.slidanetContentAddresses[Slidanet.editorContentAddress]?.distributeMove()
-
-                    Slidanet.followerTakeInProgress = false
-
-                } else if (Slidanet.ownerEditingInProgress) {
-
-                    Slidanet.contentInEditor?.let { ownerObject ->
-
-                        if (!ownerObject.getUpdateDuringEdit()) {
-
-                            val request = JSONObject()
-                            request.put(SlidanetConstants.slidanet_content_address, Slidanet.editorContentAddress)
-                            val response = SlidanetResponseData(requestCode = SlidanetRequestType.DoneEditContent,
-                                                                requestInfo = request,
-                                                                responseCode = SlidanetResponseType.DoneEditingContentAddress)
-                            Slidanet.mainHandler?.post { Slidanet.slidanetResponseHandler.slidanetResponse(response) }
-
-                        } else {
-
-                            Slidanet.editingContent = false
-
-                            Slidanet.contentInEditor?.let { editedContent ->
-
-                                Slidanet.server.logRequest(editedContent.getContentAddress(),
-                                                            SlidanetLoggingRequestType.Move,
-                                                            editedContent.getMoveCount())
-                                editedContent.setMoveCount(0)
-                            }
-                        }
-                    }
-                }
-
-            } else if (secondTapRegistered) {
-
-                firstContactTime = 0
-                firstTapRegistered = false
-                secondContactTime = 0
-                secondTapRegistered = false
-            }
-
-            boxEndPosition.x = event.getX(0).toInt()
-            boxEndPosition.y = event.getY(0).toInt()
-
-            movingView = false
         }
     }
 
@@ -412,11 +299,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             boxEndPosition.x = currentTouchPosition.x
             boxEndPosition.y = currentTouchPosition.y
             boxEndPosition.y = controlFrame.y - currentTouchPosition.y
-
-            firstContactTime = 0
-            secondContactTime = 0
-            firstTapRegistered = false
-            secondTapRegistered = false
 
             if (Slidanet.followerTakeInProgress) {
 
@@ -441,7 +323,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     when (followerObject.getShareMode()) {
 
-                        SlidanetSharingStyleType.Slide -> processMoveXYZ()
+                        SlidanetSharingStyleType.SlideAllDirections -> processMoveAllDirections()
 
                         SlidanetSharingStyleType.PeekDefine -> processDefinePeek()
 
@@ -463,7 +345,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     when (ownerObject.getShareMode()) {
 
-                        SlidanetSharingStyleType.Slide -> processMoveXYZ()
+                        SlidanetSharingStyleType.SlideAllDirections -> processMoveAllDirections()
 
                         SlidanetSharingStyleType.PeekDefine -> processDefinePeek()
 
@@ -477,11 +359,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     }
                 }
             }
-
-            firstTapRegistered = false
-            secondTapRegistered = false
-            firstContactTime = 0
-            secondContactTime = 0
         }
     }
 
@@ -1002,7 +879,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
         }
     }
 */
-    private fun processMoveXYZ() {
+    private fun processMoveAllDirections() {
 
         try {
 

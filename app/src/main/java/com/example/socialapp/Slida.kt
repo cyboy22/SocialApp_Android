@@ -37,6 +37,12 @@ class Slida: SlidanetResponseHandler {
                 handleDoneEditContent(responseData)
             }
 
+            SlidanetRequestType.CommitContentEditing -> {
+
+                handleCommitContentEditing(responseData)
+
+            }
+
             else -> {}
         }
     }
@@ -121,7 +127,23 @@ class Slida: SlidanetResponseHandler {
 
             SlidanetResponseType.EditingContent -> {
 
+                SocialApp.slidanetEditContentAddress = slidanetResponseData.requestInfo.getString(SlidanetConstants.slidanet_content_address)
+                SocialApp.slidanetSharingStyle = slidanetResponseData.sharingStyle
+                SocialApp.slidanetEditorView = slidanetResponseData.editorView!!
                 SocialApp.slidanetCallbacks.addEditor(slidanetResponseData.editorView!!)
+
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun handleCommitContentEditing(slidanetResponseData: SlidanetResponseData) {
+
+        when (slidanetResponseData.responseCode) {
+
+            SlidanetResponseType.CommittedContentEdits -> {
+
             }
 
             else -> {}

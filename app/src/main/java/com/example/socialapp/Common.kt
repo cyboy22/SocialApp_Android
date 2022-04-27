@@ -1,6 +1,7 @@
 package com.example.socialapp
 
 import Slidanet
+import SlidanetSharingStyleType
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
@@ -123,9 +124,11 @@ object Constants {
     const val usernameAlreadyExists = " already exists"
     const val invalidUserId = "invalid user ID"
     const val invalidMemberNameForMemberId = "invalid member name for member ID"
-    const val textIndent = 5
+    const val textIndent = 0
     const val rowSizeScaling = 3.0F
     const val contentDirectory = "SocialAppContent"
+    const val buttonMuteColor= Color.GRAY
+    const val buttonActiveColor = Color.WHITE
 }
 
  object SocialApp {
@@ -164,6 +167,9 @@ object Constants {
      private var actualContentCount = 0
      var listingsDownloadComplete = false
      val slida = Slida()
+     lateinit var slidanetSharingStyle: SlidanetSharingStyleType
+     var slidanetEditContentAddress: String = ""
+     lateinit var slidanetEditorView: ConstraintLayout
 
      init {
 
@@ -543,18 +549,18 @@ object Constants {
 
                                      val bitmapFile = File(directory, contentId)
 
-                                     if (!bitmapFile.exists()) {
+                                     //if (!bitmapFile.exists()) {
 
                                          val bitmap = Slidanet.textToImage(text,
                                                                            Typeface.DEFAULT,
-                                                                   14.0F,
+                                                                   12.0F,
                                                                            Color.BLACK,
                                                                            Color.WHITE,
                                                                            density,
                                                                            Constants.textIndent,
                                                                            applicationContext)
                                          storeImage(bitmap, contentId)
-                                     }
+                                     //}
                                  }
                              }
 
@@ -713,6 +719,7 @@ interface SlidanetCallbacks {
     fun refreshSlidanetContent(index: Int)
     fun addEditor(editorView: ConstraintLayout)
     fun removeEditor(editorView: ConstraintLayout)
+    fun initializeEditingButtons()
 }
 
 fun createUUID() : String {

@@ -1,16 +1,28 @@
 <resources>
     <string name="app_name">Social App</string>
-    <string name="choose_username">choose username</string>
+    <string name="choose_username">Choose Username</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="post">post</string>
-    <string name="follow">follow</string>
-    <string name="unfollow">unfollow</string>
-    <string name="slidanetLabel">slidanet</string>
-    <string name="legacyLabel">legacy</string>
-    <string name="imageLabel">image</string>
-    <string name="videoLabel">video</string>
-    <string name="textLabel">text</string>
-    <string name="enterText">enter text</string>
-    <string name="done">done</string>
-    <string name="cancel">cancel</string>
+    <string name="post">Post</string>
+    <string name="follow">Follow</string>
+    <string name="unfollow">Unfollow</string>
+    <string name="slidanetLabel">The Future</string>
+    <string name="legacyLabel">Now</string>
+    <string name="imageLabel">Image</string>
+    <string name="videoLabel">Video</string>
+    <string name="textLabel">Text</string>
+    <string name="enterText">Enter Text</string>
+    <string name="done">Done</string>
+    <string name="cancel">Cancel</string>
+    <string name="slideButtonText">Slide</string>
+    <string name="pixButtonText">Pix</string>
+    <string name="peekButtonText">Peek</string>
+    <string name="peekDefineButtonText">Define</string>
+    <string name="peekSlideButtonText">Move</string>
+    <string name="pixDefineButtonText">Define</string>
+    <string name="pixSlideButtonText">Move</string>
+    <string name="cancelEditingButtonText">Cancel</string>
+    <string name="applyEditingButtonText">Apply</string>
+    <string name="slideLeftAndRightButtonText">Slide\nLeft And Right</string>
+    <string name="slideUpAndDownButtonText">Slide\nUp And Down</string>
+
 </resources>

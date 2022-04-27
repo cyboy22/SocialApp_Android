@@ -38,7 +38,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     private lateinit var bmp: Bitmap
     private lateinit var backgroundBmp: Bitmap
     private var updateDuringEdit = false
-    private var startTime: Float = 0.0F
+    private var startTime: Float = 0f
     private var takenStatus = false
     private var displayNeedsUpdate = false
     private var textureViewReady = false
@@ -57,7 +57,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     private lateinit var contentAddressOwner: String
     private lateinit var visibilityPreferences: MutableMap<String, Boolean>
     private lateinit var takers: MutableMap<String, String>
-    private var savedShareMode = SlidanetSharingStyleType.Slide
+    private var savedShareMode = SlidanetSharingStyleType.SlideAllDirections
     private var savedNormalizedTranslationX = 1f
     private var savedNormalizedTranslationY = 1f
     private var savedNormalizedTranslationZ = 1f
@@ -86,7 +86,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     @Volatile internal var boxEndX = 0f
     @Volatile internal var boxEndY = 0f
     @Volatile internal var rotationAngle = Constants.noRotation
-    @Volatile internal var shareMode = SlidanetSharingStyleType.Slide
+    @Volatile internal var shareMode = SlidanetSharingStyleType.SlideAllDirections
     @Volatile internal var pixPercentage = 0f
     @Volatile internal var slideEnabled = false
     @Volatile internal var peekEnabled = false
@@ -347,7 +347,9 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            SlidanetSharingStyleType.Slide -> distributeTranslation()
+            SlidanetSharingStyleType.SlideLeftAndRight,
+            SlidanetSharingStyleType.SlideUpAndDown,
+            SlidanetSharingStyleType.SlideAllDirections -> distributeTranslation()
 
             SlidanetSharingStyleType.PeekDefine,
             SlidanetSharingStyleType.PeekSlide,
@@ -534,6 +536,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         when (rotationAngle) {
 
             Constants.noRotation -> {
+
                 when (shareMode) {
 
                     /*
@@ -570,7 +573,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                                                            1f, (2 * translationY)/editingScale,      0f, 1f, 1f) // top right
                     }
                     */
-                    SlidanetSharingStyleType.Slide -> {
+                    SlidanetSharingStyleType.SlideAllDirections -> {
 /*
                         vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, (1f - 2 * translationY)/scale,  0f, 0f, 1f,// top left
                                                          (-1f + 2 * translationX)/scale, (-1f - 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
@@ -818,7 +821,9 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             when (shareMode) {
 
-                SlidanetSharingStyleType.Slide -> {
+                SlidanetSharingStyleType.SlideLeftAndRight,
+                SlidanetSharingStyleType.SlideUpAndDown,
+                SlidanetSharingStyleType.SlideAllDirections-> {
 
                     normalizedTranslationX = it.getNormalizedTranslationX()
                     normalizedTranslationY = it.getNormalizedTranslationY()
@@ -986,7 +991,8 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             val response = SlidanetResponseData(requestCode = SlidanetRequestType.EditContent,
                                                 requestInfo = request,
                                                 responseCode = SlidanetResponseType.EditingContent,
-                                                editorView = editorView
+                                                editorView = editorView,
+                                                sharingStyle = shareMode
                                                 )
 
             Slidanet.mainHandler?.post { Slidanet.slidanetResponseHandler.slidanetResponse(response) }
@@ -1065,7 +1071,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            SlidanetSharingStyleType.Slide -> {
+            SlidanetSharingStyleType.SlideAllDirections -> {
 
                 editingScale = 3f
             }
@@ -1091,7 +1097,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            SlidanetSharingStyleType.Slide -> {
+            SlidanetSharingStyleType.SlideAllDirections -> {
 
                 Slidanet.editorContent?.let {
 

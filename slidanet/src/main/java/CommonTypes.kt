@@ -21,7 +21,9 @@
                                  DoneEditContent,
                                  MaxValue }
 
-enum class SlidanetSharingStyleType { Slide,
+enum class SlidanetSharingStyleType { SlideLeftAndRight,
+                                      SlideUpAndDown,
+                                      SlideAllDirections,
                                       PeekDefine,
                                       PeekSlide,
                                       PixDefine,

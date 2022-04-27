@@ -8,4 +8,5 @@ public data class SlidanetResponseData(val requestCode: SlidanetRequestType,
                                        val responseInfo: JSONObject? = null,
                                        val applicationContext: Context? = null,
                                        var slidanetContentContainer: ConstraintLayout? = null,
-                                       val editorView: ConstraintLayout? = null)
+                                       val editorView: ConstraintLayout? = null,
+                                       var sharingStyle: SlidanetSharingStyleType = SlidanetSharingStyleType.SlideAllDirections)

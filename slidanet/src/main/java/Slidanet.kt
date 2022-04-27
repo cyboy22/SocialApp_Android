@@ -477,7 +477,9 @@ object Slidanet {
 
                 when (slidanetSharingStyle) {
 
-                    SlidanetSharingStyleType.Slide -> {
+                    SlidanetSharingStyleType.SlideLeftAndRight,
+                    SlidanetSharingStyleType.SlideUpAndDown,
+                    SlidanetSharingStyleType.SlideAllDirections -> {
 
                         if (it.getShareMode() == slidanetSharingStyle) {
 
@@ -490,13 +492,14 @@ object Slidanet {
                         request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                         request.put(SlidanetConstants.slidanet_share_style, Constants.slide)
                         requestId++
-                        requests[requestId] = SlidanetResponseData(SlidanetRequestType.SetContentShareStyle,
-                                                                   request,
-                                                                   SlidanetResponseType.Undefined)
+                        requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.SetContentShareStyle,
+                                                                   requestInfo = request,
+                                                                   responseCode = SlidanetResponseType.ShareModeDefinitionSet,
+                                                                   sharingStyle = slidanetSharingStyle)
 
                         rendererHandler.post {
 
-                            it.setShareMode(SlidanetSharingStyleType.Slide)
+                            it.setShareMode(slidanetSharingStyle)
                             it.setShareTranslationParameters(x, y, 1f)
                             it.setShareBoxParameters(0f, 0f, 0f, 0f)
                             it.initializeVertices(x, y)
@@ -538,9 +541,10 @@ object Slidanet {
                         request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                         request.put(SlidanetConstants.slidanet_share_style, Constants.peek)
                         requestId++
-                        requests[requestId] = SlidanetResponseData(SlidanetRequestType.SetContentShareStyle,
-                                                                   request,
-                                                                   SlidanetResponseType.Undefined)
+                        requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.SetContentShareStyle,
+                                                                   requestInfo = request,
+                                                                   responseCode = SlidanetResponseType.ShareModeDefinitionSet,
+                                                                   sharingStyle = slidanetSharingStyle)
                         rendererHandler.post {
 
                             it.setShareMode(slidanetSharingStyle)
@@ -588,9 +592,10 @@ object Slidanet {
                         request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                         request.put(SlidanetConstants.slidanet_share_style, Constants.pix)
                         requestId++
-                        requests[requestId] = SlidanetResponseData(SlidanetRequestType.SetContentShareStyle,
-                                                                   request,
-                                                                   SlidanetResponseType.Undefined)
+                        requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.SetContentShareStyle,
+                                                                   requestInfo = request,
+                                                                   responseCode = SlidanetResponseType.ShareModeDefinitionSet,
+                                                                   sharingStyle = slidanetSharingStyle)
                         rendererHandler.post {
 
                             it.setShareMode(slidanetSharingStyle)
@@ -1758,7 +1763,9 @@ object Slidanet {
 
                     when (SlidanetSharingStyleType.values()[rc_it]) {
 
-                        SlidanetSharingStyleType.Slide -> {
+                        SlidanetSharingStyleType.SlideLeftAndRight,
+                        SlidanetSharingStyleType.SlideUpAndDown,
+                        SlidanetSharingStyleType.SlideAllDirections-> {
 
                             val x = requireNotNull(this.getFloat())
                             val y = requireNotNull(this.getFloat())
@@ -1782,8 +1789,6 @@ object Slidanet {
                                                     it.setShareTranslationParameters(x,y,z)
                                                     it.initializeVertices(x,y)
                                                     it.setDisplayNeedsUpdate(true)
-                                                    //editorControl?.initializeAvailableMovement(contentAddress,
-                                                    //                                           it.getContentAddressOwner())
                                                 }
                                             }
                                         }
@@ -1795,7 +1800,6 @@ object Slidanet {
                                             it.setShareTranslationParameters(x,y,z)
                                             it.initializeVertices(x,y)
                                             it.setDisplayNeedsUpdate(true)
-                                            //editorControl?.initializeAvailableMovement(contentAddress,it.getContentAddressOwner())
                                         }
                                     }
 
@@ -1806,7 +1810,6 @@ object Slidanet {
                                         it.setShareTranslationParameters(x,y,z)
                                         it.initializeVertices(x, y)
                                         it.setDisplayNeedsUpdate(true)
-                                        //editorControl?.initializeAvailableMovement(contentAddress,it.getContentAddressOwner())
                                     }
                                 }
 
@@ -1858,8 +1861,6 @@ object Slidanet {
 
                                         it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
                                         it.setDisplayNeedsUpdate(true)
-                                        //editorControl?.initializeAvailableMovement(it.getContentAddress(),
-                                         //                                          it.getContentAddressOwner())
                                     }
                                 }
                             }
@@ -1990,7 +1991,9 @@ object Slidanet {
 
                     when (SlidanetSharingStyleType.values()[rc_it]) {
 
-                        SlidanetSharingStyleType.Slide -> {
+                        SlidanetSharingStyleType.SlideLeftAndRight,
+                        SlidanetSharingStyleType.SlideUpAndDown,
+                        SlidanetSharingStyleType.SlideAllDirections -> {
 
                             val x = requireNotNull(getFloat())
                             val y = requireNotNull(getFloat())

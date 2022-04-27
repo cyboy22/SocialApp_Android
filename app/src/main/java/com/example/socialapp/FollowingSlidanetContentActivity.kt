@@ -131,4 +131,8 @@ class FollowingSlidanetContentActivity : AppCompatActivity(),
 
         adapter.notifyItemChanged(index)
     }
+
+    override fun initializeEditingButtons() {
+
+    }
 }

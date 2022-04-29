@@ -22,7 +22,8 @@
     <string name="pixSlideButtonText">Move</string>
     <string name="cancelEditingButtonText">Cancel</string>
     <string name="applyEditingButtonText">Apply</string>
-    <string name="slideLeftAndRightButtonText">Slide\nLeft And Right</string>
-    <string name="slideUpAndDownButtonText">Slide\nUp And Down</string>
+    <string name="slideLeftAndRightButtonText">Left And Right</string>
+    <string name="slideUpAndDownButtonText">SUp And Down</string>
+    <string name="slideAllDirectionsButtonText">All Directions</string>
 
 </resources>

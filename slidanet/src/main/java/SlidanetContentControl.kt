@@ -46,7 +46,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     private var lastNormalizedTranslationY = 0f
     private var lastBoxBeginX = 0f
     private var lastBoxBeginY = 0f
-    private var lastPixelWidth = 0f
 
     init {
 
@@ -81,140 +80,9 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
         lastNormalizedTranslationY = 0f
         lastBoxBeginX = 0f
         lastBoxBeginY = 0f
-        lastPixelWidth = 0f
 
     }
 
-    /*
-    private fun initializeAvailableMovementLeftToRight(slidanetObject: SlidanetObject) {
-
-        availableUp = 0f
-        availableDown = 0f
-        availableLeft = slidanetObject.getNormalizedTranslationX()
-        availableRight = 1f - availableLeft
-
-    }
-
-    private fun initializeAvailableMovementRightToLeft(slidanetObject: SlidanetObject) {
-
-        availableUp = 0f
-        availableDown = 0f
-        availableRight = -slidanetObject.getNormalizedTranslationX()
-        availableLeft = 1f - availableRight
-    }
-
-    private fun initializeAvailableMovementTopToBottom(slidanetObject: SlidanetObject) {
-
-        availableLeft = 0f
-        availableRight = 0f
-        availableUp = -slidanetObject.getNormalizedTranslationY()
-        availableDown = 1f - availableUp
-
-    }
-
-    private fun initializeAvailableMovementBottomToTop(slidanetObject: SlidanetObject) {
-
-        availableLeft = 0f
-        availableRight = 0f
-        availableDown = 1f - slidanetObject.getNormalizedTranslationY()
-        availableUp = 1f - availableDown
-
-    }
-
-    private fun initializeAvailableMovementXYZ(contentAddressOwner: String) {
-
-        availableLeft = 1f + Slidanet.contentInEditor?.getNormalizedTranslationX()!!
-        availableUp = 1f + Slidanet.contentInEditor?.getNormalizedTranslationY()!!
-
-        if (Slidanet.slidaName == contentAddressOwner) {
-
-            availableRight = 2f - availableLeft
-            availableDown = 2f - availableUp
-
-        } else {
-
-            availableRight = 2f/Slidanet.contentInEditor?.getEditingScale()!!
-            availableDown = 2f/Slidanet.contentInEditor?.getEditingScale()!!
-        }
-    }
-
-    private fun initializeAvailableMovementPeek(contentAddressOwner: String) {
-
-        val boxWidth = Slidanet.contentInEditor?.getBoxEndX()!! - Slidanet.contentInEditor?.getBoxBeginX()!!
-        val boxHeight = Slidanet.contentInEditor?.getBoxEndY()!! - Slidanet.contentInEditor?.getBoxBeginY()!!
-
-        availableLeft = Slidanet.contentInEditor?.getBoxBeginX()!!
-        availableRight = 1f - (availableLeft+boxWidth)
-        availableDown = Slidanet.contentInEditor?.getBoxBeginY()!!
-        availableUp = 1f - (availableDown+boxHeight)
-
-    }
-
-    private fun initializeAvailableMovementPix(contentAddressOwner: String) {
-
-        availableRight = 1f
-        availableLeft = 0f
-        availableUp = 0f
-        availableDown = 0f
-    }
-
-    internal fun initializeAvailableMovement(contentAddress: String, contentAddressOwner: String) {
-
-        if (contentAddressOwner != Slidanet.slidaName) {
-
-            Slidanet.slidanetContentAddresses[contentAddress]?.let {
-
-                when (it.getShareMode()) {
-
-                    ShareModeType.SlideXYZ -> {
-
-                        initializeAvailableMovementXYZ(contentAddressOwner)
-                    }
-
-                    ShareModeType.SlidePeekDefine,
-                    ShareModeType.SlidePeekSlide-> {
-
-                        initializeAvailableMovementPeek(contentAddressOwner)
-                    }
-
-                    ShareModeType.SlidePixDefine,
-                    ShareModeType.SlidePixSlide -> {
-
-                        initializeAvailableMovementPix(contentAddressOwner)
-                    }
-
-                    else -> {}
-                }
-            }
-        } else {
-
-            Slidanet.contentInEditor?.let {
-
-                when (it.getShareMode()) {
-
-                    ShareModeType.SlideXYZ -> {
-
-                        initializeAvailableMovementXYZ(contentAddressOwner)
-                    }
-
-                    ShareModeType.SlidePeekDefine,
-                    ShareModeType.SlidePeekSlide-> {
-
-                        initializeAvailableMovementPeek(contentAddressOwner)
-                    }
-
-                    ShareModeType.SlidePixDefine,
-                    ShareModeType.SlidePixSlide -> {
-
-                        initializeAvailableMovementPix(contentAddressOwner)
-                    }
-
-                    else -> {}
-                }
-            }
-        }
-    }
-*/
     override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
 
         Slidanet.rendererHandler.post {
@@ -257,7 +125,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             boxStartPosition.y = currentTouchPosition.y
 
             this.getLocationOnScreen(locationInView)
-            boxStartPosition.y = Slidanet.screenHeightInPixels - boxStartPosition.y
+            boxStartPosition.y = (Slidanet.screenHeightInPixels * Slidanet.screenDensity).toInt() - boxStartPosition.y
 
             var viewPosition: IntArray = intArrayOf(0, 0)
 
@@ -271,8 +139,10 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             } else if (Slidanet.ownerEditingInProgress) {
 
                 Slidanet.contentInEditor?.let { ownerObject ->
-
                     viewPosition = ownerObject.getViewPosition()
+                    subjectFrame.x = ownerObject.getTextureWidth()
+                    subjectFrame.y = ownerObject.getTextureHeight()
+                    subjectDiagonal.x = ownerObject.getTextureWidth()
                 }
             }
 
@@ -280,12 +150,14 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             subjectDiagonal.y = subjectOrigin.y + subjectFrame.y
 
         }
-
     }
 
     private fun processPointerUp(event: MotionEvent?) {
 
         event?.let {
+
+            boxEndPosition.x = it.getX(0).toInt()
+            boxEndPosition.y = it.getY(0).toInt()
 
         }
     }
@@ -323,15 +195,13 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     when (followerObject.getShareMode()) {
 
-                        SlidanetSharingStyleType.SlideAllDirections -> processMoveAllDirections()
+                        SlidanetSharingStyleType.SlideAllDirections,
+                        SlidanetSharingStyleType.SlideUpAndDown,
+                        SlidanetSharingStyleType.SlideLeftAndRight -> processGeneralMove()
 
                         SlidanetSharingStyleType.PeekDefine -> processDefinePeek()
 
                         SlidanetSharingStyleType.PeekSlide -> processMovePeek()
-
-                        SlidanetSharingStyleType.PixDefine -> processDefinePix()
-
-                        SlidanetSharingStyleType.PixSlide -> processMovePix()
 
                         else -> {}
                     }
@@ -345,15 +215,13 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     when (ownerObject.getShareMode()) {
 
-                        SlidanetSharingStyleType.SlideAllDirections -> processMoveAllDirections()
+                        SlidanetSharingStyleType.SlideAllDirections,
+                        SlidanetSharingStyleType.SlideLeftAndRight,
+                        SlidanetSharingStyleType.SlideUpAndDown -> processGeneralMove()
 
                         SlidanetSharingStyleType.PeekDefine -> processDefinePeek()
 
                         SlidanetSharingStyleType.PeekSlide -> processMovePeek()
-
-                        SlidanetSharingStyleType.PixDefine -> processDefinePix()
-
-                        SlidanetSharingStyleType.PixSlide -> processMovePix()
 
                         else -> {}
                     }
@@ -879,7 +747,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
         }
     }
 */
-    private fun processMoveAllDirections() {
+    private fun processGeneralMove() {
 
         try {
 
@@ -913,7 +781,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
             if (w > 0f && h > 0f && editingScale > 0f) {
 
-                val a = w/h
+                val a = w / h
 
                 val scaleDeltaX = 1f//w * a
                 val scaleDeltaY = 1f//w / a
@@ -933,13 +801,25 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                 lastTouchPosition.x = currentTouchPosition.x
                 lastTouchPosition.y = currentTouchPosition.y
 
-                normalizedTranslationX += viewNormalizedDeltaX
-                if (normalizedTranslationX < -1f) normalizedTranslationX = -1f
-                if (normalizedTranslationX > 1f) normalizedTranslationX = 1f
+                Slidanet.contentInEditor?.getShareMode().let {
 
-                normalizedTranslationY -= viewNormalizedDeltaY
-                if (normalizedTranslationY < -1f) normalizedTranslationY = -1f
-                if (normalizedTranslationY > 1f) normalizedTranslationY = 1f
+                    if (it == SlidanetSharingStyleType.SlideLeftAndRight ||
+                        it == SlidanetSharingStyleType.SlideAllDirections) {
+
+                        normalizedTranslationX += viewNormalizedDeltaX
+                        if (normalizedTranslationX < -1f) normalizedTranslationX = -1f
+                        if (normalizedTranslationX > 1f) normalizedTranslationX = 1f
+                    }
+
+                    if (it == SlidanetSharingStyleType.SlideUpAndDown ||
+                        it == SlidanetSharingStyleType.SlideAllDirections) {
+
+                        normalizedTranslationY -= viewNormalizedDeltaY
+                        if (normalizedTranslationY < -1f) normalizedTranslationY = -1f
+                        if (normalizedTranslationY > 1f) normalizedTranslationY = 1f
+
+                    }
+                }
 
                 if ((normalizedTranslationX != lastNormalizedTranslationX) ||normalizedTranslationY != lastNormalizedTranslationY) {
 
@@ -1037,10 +917,12 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     boxBeginX += viewNormalizedDeltaX
                     if (boxBeginX < 0f) boxBeginX = 0f
                     if (boxBeginX > 1f - boxWidth) boxBeginX = 1f - boxWidth
+                    boxEndX = boxBeginX + boxWidth
 
                     boxBeginY -= viewNormalizedDeltaY
                     if (boxBeginY < 0f) boxBeginY = 0f
                     if (boxBeginY > 1f - boxHeight) boxBeginY = 1f - boxHeight
+                    boxEndY = boxBeginY + boxHeight
 
                     /*
                     if (viewNormalizedDeltaX > 0f) {
@@ -1171,105 +1053,15 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
     private fun processDefinePeek() {
 
-        if (boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) {
+        /*
+        if ((boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) && (boxStartPosition.x != 0)) {
             return
         }
+
+         */
 
         calculateBox()
-
-    }
-
-    private fun generatePixelSize() {
-
-        try {
-
-            Slidanet.contentInEditor?.let {
-
-                val boxWidth = it.getBoxEndX() - it.getBoxBeginX()
-                val boxHeight = it.getBoxEndY() - it.getBoxBeginY()
-
-                if (boxWidth > 0 && boxHeight > 0) {
-
-                    val a = boxWidth / boxHeight
-
-                    val scaleDeltaX = boxWidth * a
-
-                    if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
-                        lastTouchPosition = currentTouchPosition
-                    }
-
-                    val viewNormalizedDeltaX =
-                        ((currentTouchPosition.x - lastTouchPosition.x).toFloat() / controlFrame.x.toFloat()) * scaleDeltaX
-
-                    lastTouchPosition.x = currentTouchPosition.x
-                    lastTouchPosition.y = currentTouchPosition.y
-
-                    var dynamicPixelWidth = 1f
-
-                    dynamicPixelWidth = it.getPixelWidth() + viewNormalizedDeltaX * scaleDeltaX
-                    if (dynamicPixelWidth < 0) dynamicPixelWidth = 0f
-                    if (dynamicPixelWidth > Constants.defaultPixelWidth) dynamicPixelWidth = Constants.defaultPixelWidth.toFloat()
-
-                    if (dynamicPixelWidth != lastPixelWidth) {
-
-                        lastPixelWidth = dynamicPixelWidth
-
-                        if (Slidanet.followerTakeInProgress) {
-
-                            Slidanet.slidanetContentAddresses[Slidanet.editorContentAddress]?.let { followerObject ->
-
-                                followerObject.setPixelWidth(dynamicPixelWidth.toInt())
-                                followerObject.setDisplayNeedsUpdate(true)
-                            }
-
-                        } else if (Slidanet.ownerEditingInProgress) {
-
-                            it.setPixelWidth(dynamicPixelWidth.toInt())
-                            it.setDisplayNeedsUpdate(true)
-
-                            if (it.getUpdateDuringEdit()) {
-
-                                it.incrementMoveCount()
-
-                                Slidanet.slidanetContentAddresses[it.getEditorContentAddress()]?.let { subjectContentAddress ->
-
-                                    subjectContentAddress.setPixelWidth(dynamicPixelWidth.toInt())
-                                    subjectContentAddress.setDisplayNeedsUpdate(true)
-                                    subjectContentAddress.incrementMoveCount()
-                                    subjectContentAddress.distributeMove()
-                                }
-                            } else {
-                                it.setMoveCount(1)
-                            }
-                        }
-                    }
-                }
-            }
-
-        } catch (e: IllegalArgumentException) {
-
-        }
-    }
-
-    private fun processDefinePix() {
-
-        if (boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) {
-
-            return
-        }
-
-        calculateBox()
-
-    }
-
-    private fun processMovePix() {
-
-        if (boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) {
-
-            return
-        }
-
-        generatePixelSize()
+        generateMaskBox()
 
     }
 
@@ -1298,25 +1090,32 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
         var endY: Int
 
         if (boxStartPosition.x >= boxEndPosition.x) {
+
             startX = boxEndPosition.x
             endX = boxStartPosition.x
 
             if (startX > controlFrame.x) {
+
                 startX = controlFrame.x
             }
 
             if (startX < 0) {
+
                 startX = 0
             }
+
         } else {
+
             startX = boxStartPosition.x
             endX = boxEndPosition.x
 
             if (endX > controlFrame.x) {
+
                 endX = controlFrame.x
             }
 
             if (endX < 0) {
+
                 endX = 0
             }
         }
@@ -1327,20 +1126,24 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             startY = boxEndPosition.y
 
             if (startY > controlFrame.y) {
+
                 startY = controlFrame.y
             }
+
         } else {
+
             startY = boxStartPosition.y
             endY = boxEndPosition.y
 
             if (endY < 0) {
+
                 endY = 0
             }
         }
 
         if (rectanglesOverlap(Point(startX, startY), Point(endX, endY), subjectOrigin, subjectDiagonal)) {
 
-            Slidanet.contentInEditor?.let {editorView ->
+            Slidanet.contentInEditor?.let { editorView ->
 
                 if (startX < subjectOrigin.x) {
 
@@ -1363,12 +1166,63 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     endY = subjectDiagonal.y
                 }
 
-                val normalizedBoxBeginX = (startX - subjectOrigin.x).toFloat()/subjectFrame.x.toFloat()
-                val normalizedBoxBeginY = (startY - subjectOrigin.y).toFloat()/subjectFrame.y.toFloat()
-                val normalizedBoxEndX = (endX - subjectOrigin.x).toFloat()/subjectFrame.x.toFloat()
-                val normalizedBoxEndY = (endY - subjectOrigin.y).toFloat()/subjectFrame.y.toFloat()
+                val normalizedBoxBeginX =
+                    (startX - subjectOrigin.x).toFloat() / subjectFrame.x.toFloat()
+                val normalizedBoxBeginY =
+                    (startY - subjectOrigin.y).toFloat() / subjectFrame.y.toFloat()
+                val normalizedBoxEndX =
+                    (endX - subjectOrigin.x).toFloat() / subjectFrame.x.toFloat()
+                val normalizedBoxEndY =
+                    (endY - subjectOrigin.y).toFloat() / subjectFrame.y.toFloat()
 
-                editorView.initializeBoxDimensions(normalizedBoxBeginX, normalizedBoxBeginY, normalizedBoxEndX, normalizedBoxEndY)
+
+                if (Slidanet.followerTakeInProgress) {
+
+                    Slidanet.slidanetContentAddresses[Slidanet.editorContentAddress]?.let { followerObject ->
+
+                        followerObject.setBoxBeginX(normalizedBoxBeginX)
+                        followerObject.setBoxBeginY(normalizedBoxBeginY)
+                        followerObject.setBoxEndX(normalizedBoxEndX)
+                        followerObject.setBoxEndY(normalizedBoxEndY)
+                        followerObject.setDisplayNeedsUpdate(true)
+
+                    }
+
+                } else /*(Slidanet.ownerEditingInProgress)*/ {
+
+                    Slidanet.contentInEditor?.let {
+
+                        editorView.setBoxBeginX(normalizedBoxBeginX)
+                        editorView.setBoxBeginY(normalizedBoxBeginY)
+                        editorView.setBoxEndX(normalizedBoxBeginX)
+                        editorView.setBoxEndY(normalizedBoxBeginY)
+                        editorView.setDisplayNeedsUpdate(true)
+                        editorView.initializeBoxDimensions(normalizedBoxBeginX, normalizedBoxBeginY, normalizedBoxEndX, normalizedBoxEndY)
+
+                        if (editorView.getUpdateDuringEdit()) {
+
+                            editorView.incrementMoveCount()
+
+                            Slidanet.slidanetContentAddresses[editorView.getContentAddress()]?.let { ownerObject ->
+
+                                ownerObject.setBoxBeginX(normalizedBoxBeginX)
+                                ownerObject.setBoxBeginY(normalizedBoxBeginY)
+                                ownerObject.setBoxEndX(normalizedBoxEndX)
+                                ownerObject.setBoxEndY(normalizedBoxEndY)
+                                ownerObject.setDisplayNeedsUpdate(true)
+                                ownerObject.incrementMoveCount()
+                                ownerObject.distributeMove()
+                            }
+                        } else {
+
+                            editorView.setMoveCount(1)
+                        }
+                    }
+                }
+
+
+/*
+                    editorView.initializeBoxDimensions(normalizedBoxBeginX, normalizedBoxBeginY, normalizedBoxEndX, normalizedBoxEndY)
                 editorView.setDisplayNeedsUpdate(true)
 
                 if (editorView.getUpdateDuringEdit()) {
@@ -1386,6 +1240,9 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                 } else {
                         editorView.setMoveCount(1)
                 }
+            }
+
+ */
             }
         }
     }

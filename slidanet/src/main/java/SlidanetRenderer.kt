@@ -452,9 +452,6 @@ internal class SlidanetRenderer {
             val peekItEnabledLocation = glGetUniformLocation(it, "peek_active")
             glUniform1i(peekItEnabledLocation, shaderContext.peekItEnabled.toInt())
 
-            val pixItEnabledLocation = glGetUniformLocation(it, "pix_active")
-            glUniform1i(pixItEnabledLocation, shaderContext.pixItEnabled.toInt())
-
             val textureWidthLocation = glGetUniformLocation(it, "texture_width")
             GLES20.glUniform1f(textureWidthLocation, shaderContext.textureWidth.toFloat())
 
@@ -463,12 +460,6 @@ internal class SlidanetRenderer {
 
             val alphaLocation = glGetUniformLocation(it, "alpha")
             GLES20.glUniform1f(alphaLocation, shaderContext.alpha)
-
-            val pixelWidthLocation = glGetUniformLocation(it, "pixel_width")
-            GLES20.glUniform1f(pixelWidthLocation, shaderContext.pixelWidth.toFloat())
-
-            val pixelHeightLocation = glGetUniformLocation(it, "pixel_height")
-            GLES20.glUniform1f(pixelHeightLocation, shaderContext.pixelHeight.toFloat())
 
             val boxXBeginLocation = glGetUniformLocation(it, "box_x_begin")
             GLES20.glUniform1f(boxXBeginLocation, shaderContext.boxBeginX)

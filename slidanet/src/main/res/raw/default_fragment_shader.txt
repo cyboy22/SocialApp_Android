@@ -3,10 +3,7 @@ precision mediump float;
 uniform int video_running;
 uniform float texture_width;
 uniform float texture_height;
-uniform int pix_active;
 uniform int peek_active;
-uniform float pixel_width;
-uniform float pixel_height;
 uniform float box_x_begin;
 uniform float box_y_begin;
 uniform float box_x_end;
@@ -38,34 +35,6 @@ void main() {
    }
 
    vec4 pixel_color = vec4(base_color, alpha);
-
-   if (pix_active>0) {
-
-      vec2 uv = v_texcoord.xy;
-
-      if ( uv.x>box_x_begin && uv.x<box_x_end && uv.y>box_y_begin && uv.y<box_y_end ) {
-
-         float dx = pixel_width * (1.0 / texture_width);
-         float dy = pixel_height * (1.0 / texture_height);
-         vec2 coord = vec2(dx*floor(uv.x/dx), dy*floor(uv.y/dy));
-
-         if (video_running > 0) {
-
-            vec4 transformed_texcoord = texture_transform * vec4(coord.s, coord.t, 1.0, 0.0);
-            vec2 n_texcoord = vec2(transformed_texcoord.s, transformed_texcoord.t);
-            //base_color = texture2D(external_texture, n_texcoord).rbg;
-
-         } else {
-
-            base_color = texture2D(s_texture, coord).rgb;
-
-         }
-      }
-
-      vec3 neg = base_color;
-      pixel_color = vec4(mix(base_color, neg, T), alpha);
-
-   }
 
    if (peek_active>0) {
 

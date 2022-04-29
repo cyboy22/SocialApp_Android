@@ -22,18 +22,15 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
     private lateinit var followButton: Button
     private lateinit var legacyButton: Button
     private lateinit var slideButton: Button
-    private lateinit var pixButton: Button
     private lateinit var peekButton: Button
     private lateinit var peekDefineButton: Button
     private lateinit var peekSlideButton: Button
-    private lateinit var pixDefineButton: Button
-    private lateinit var pixSlideButton: Button
     private lateinit var slideLeftAndRightButton: Button
     private lateinit var slideUpAndDownButton: Button
+    private lateinit var slideAllDirectionsButton: Button
     private lateinit var cancelEditingButton: Button
     private lateinit var applyEditingButton: Button
     private lateinit var peekOptionsLayout: ConstraintLayout
-    private lateinit var pixOptionsLayout: ConstraintLayout
     private lateinit var slideOptionsLayout: ConstraintLayout
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: OwnSlidanetContentAdapter
@@ -86,9 +83,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         peekOptionsLayout = ConstraintLayout(this)
         peekOptionsLayout.id = View.generateViewId()
 
-        pixOptionsLayout = ConstraintLayout(this)
-        pixOptionsLayout.id = View.generateViewId()
-
         slideOptionsLayout = ConstraintLayout(this)
         slideOptionsLayout.id = View.generateViewId()
 
@@ -118,13 +112,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         peekButton.id = View.generateViewId()
         peekButton.setText(R.string.peekButtonText)
 
-        pixButton = Button(this)
-        pixButton.setOnClickListener(this)
-        pixButton.transformationMethod = null
-        pixButton.background = null
-        pixButton.id = View.generateViewId()
-        pixButton.setText(R.string.pixButtonText)
-
         peekDefineButton = Button(this)
         peekDefineButton.setOnClickListener(this)
         peekDefineButton.transformationMethod = null
@@ -138,20 +125,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         peekSlideButton.background = null
         peekSlideButton.id = View.generateViewId()
         peekSlideButton.setText(R.string.peekSlideButtonText)
-
-        pixDefineButton = Button(this)
-        pixDefineButton.setOnClickListener(this)
-        pixDefineButton.transformationMethod = null
-        pixDefineButton.background = null
-        pixDefineButton.id = View.generateViewId()
-        pixDefineButton.setText(R.string.pixDefineButtonText)
-
-        pixSlideButton = Button(this)
-        pixSlideButton.setOnClickListener(this)
-        pixSlideButton.transformationMethod = null
-        pixSlideButton.background = null
-        pixSlideButton.id = View.generateViewId()
-        pixSlideButton.setText(R.string.pixSlideButtonText)
 
         cancelEditingButton = Button(this)
         cancelEditingButton.setOnClickListener(this)
@@ -184,6 +157,14 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         slideUpAndDownButton.id = View.generateViewId()
         slideUpAndDownButton.setText(R.string.slideLeftAndRightButtonText)
         slideUpAndDownButton.setTextColor(Color.WHITE)
+
+        slideAllDirectionsButton = Button(this)
+        slideAllDirectionsButton.setOnClickListener(this)
+        slideAllDirectionsButton.transformationMethod = null
+        slideAllDirectionsButton.background = null
+        slideAllDirectionsButton.id = View.generateViewId()
+        slideAllDirectionsButton.setText(R.string.slideAllDirectionsButtonText)
+        slideAllDirectionsButton.setTextColor(Color.WHITE)
 
         /*
         peekOptionsLayout.layoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
@@ -221,16 +202,12 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
             legacyButton -> legacyButtonClicked()
             slideButton -> slideButtonClicked()
             peekButton -> peekButtonClicked()
-            pixButton -> pixButtonClicked()
             peekDefineButton -> peekDefineButtonClicked()
             peekSlideButton -> peekSlideButtonClicked()
-            pixDefineButton -> pixDefineButtonClicked()
-            pixSlideButton -> pixSlideButtonClicked()
             cancelEditingButton -> cancelEditingButtonClicked()
             applyEditingButton -> applyEditingButtonClicked()
             slideLeftAndRightButton -> slideLeftAndRightButtonClicked()
-            slideUpAndDownButton -> slideUpAndDownButtonClicked()
-
+            slideAllDirectionsButton -> slideAllDirectionsButtonClicked()
             else -> {}
 
         }
@@ -262,10 +239,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
     }
 
-    private fun pixButtonClicked() {
-
-    }
-
     private fun peekButtonClicked() {
 
     }
@@ -278,19 +251,15 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
     }
 
-    private fun pixDefineButtonClicked() {
-
-    }
-
-    private fun pixSlideButtonClicked() {
-
-    }
-
     private fun slideLeftAndRightButtonClicked() {
 
     }
 
     private fun slideUpAndDownButtonClicked() {
+
+    }
+
+    private fun slideAllDirectionsButtonClicked() {
 
     }
 
@@ -353,28 +322,26 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
         slideButton.setTextColor(Constants.buttonMuteColor)
         peekButton.setTextColor(Constants.buttonMuteColor)
-        pixButton.setTextColor(Constants.buttonMuteColor)
         peekDefineButton.setTextColor(Constants.buttonMuteColor)
         peekSlideButton.setTextColor(Constants.buttonMuteColor)
-        pixDefineButton.setTextColor(Constants.buttonMuteColor)
-        pixSlideButton.setTextColor(Constants.buttonMuteColor)
         slideLeftAndRightButton.setTextColor(Constants.buttonMuteColor)
         slideUpAndDownButton.setTextColor(Constants.buttonMuteColor)
+        slideAllDirectionsButton.setTextColor(Constants.buttonMuteColor)
 
     }
 
     private fun layoutEditingButtons() {
 
         SocialApp.slidanetEditorView.addView(peekButton)
-        SocialApp.slidanetEditorView.addView(pixButton)
         SocialApp.slidanetEditorView.addView(slideButton)
         SocialApp.slidanetEditorView.addView(cancelEditingButton)
         SocialApp.slidanetEditorView.addView(applyEditingButton)
         SocialApp.slidanetEditorView.addView(peekDefineButton)
         SocialApp.slidanetEditorView.addView(peekSlideButton)
-        SocialApp.slidanetEditorView.addView(pixDefineButton)
-        SocialApp.slidanetEditorView.addView(pixSlideButton)
         SocialApp.slidanetEditorView.addView(peekOptionsLayout)
+        SocialApp.slidanetEditorView.addView(slideLeftAndRightButton)
+        SocialApp.slidanetEditorView.addView(slideUpAndDownButton)
+        SocialApp.slidanetEditorView.addView(slideAllDirectionsButton)
 
         val constraintSet = ConstraintSet()
         constraintSet.clone(SocialApp.slidanetEditorView)
@@ -388,16 +355,14 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         constraintSet.connect(peekSlideButton.id, ConstraintSet.TOP, peekDefineButton.id, ConstraintSet.BOTTOM)
         constraintSet.connect(peekSlideButton.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
 
-        constraintSet.connect(pixButton.id, ConstraintSet.LEFT, peekButton.id, ConstraintSet.RIGHT)
-        constraintSet.connect(pixButton.id, ConstraintSet.RIGHT, slideButton.id, ConstraintSet.LEFT)
+        constraintSet.connect(slideLeftAndRightButton.id, ConstraintSet.TOP, slideButton.id, ConstraintSet.BOTTOM)
+        constraintSet.connect(slideLeftAndRightButton.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
 
-        constraintSet.connect(pixDefineButton.id, ConstraintSet.TOP, pixButton.id, ConstraintSet.BOTTOM)
-        constraintSet.connect(pixDefineButton.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
-        constraintSet.connect(pixDefineButton.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
+        constraintSet.connect(slideUpAndDownButton.id, ConstraintSet.TOP, slideLeftAndRightButton.id, ConstraintSet.BOTTOM)
+        constraintSet.connect(slideUpAndDownButton.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
 
-        constraintSet.connect(pixSlideButton.id, ConstraintSet.TOP, pixDefineButton.id, ConstraintSet.BOTTOM)
-        constraintSet.connect(pixSlideButton.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
-        constraintSet.connect(pixSlideButton.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
+        constraintSet.connect(slideAllDirectionsButton.id, ConstraintSet.TOP, slideUpAndDownButton.id, ConstraintSet.BOTTOM)
+        constraintSet.connect(slideAllDirectionsButton.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
 
         constraintSet.connect(slideButton.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
         constraintSet.connect(peekButton.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
@@ -409,13 +374,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         constraintSet.connect(applyEditingButton.id, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
         constraintSet.applyTo(SocialApp.slidanetEditorView)
 
-/*
-        constraintSet.connect(peekOptionsLayout.id, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT)
-        constraintSet.connect(peekOptionsLayout.id, ConstraintSet.BOTTOM, ConstraintSet.PARENT_ID, ConstraintSet.BOTTOM)
-        constraintSet.connect(peekOptionsLayout.id, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-        constraintSet.connect(peekOptionsLayout.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
-        */
-
     }
 
     override fun initializeEditingButtons() {
@@ -425,6 +383,17 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         when (SocialApp.slidanetSharingStyle) {
 
             SlidanetSharingStyleType.SlideAllDirections -> {
+                slideAllDirectionsButton.setTextColor(Constants.buttonActiveColor)
+                slideButton.setTextColor(Constants.buttonActiveColor)
+            }
+
+            SlidanetSharingStyleType.SlideLeftAndRight -> {
+                slideLeftAndRightButton.setTextColor(Constants.buttonActiveColor)
+                slideButton.setTextColor(Constants.buttonActiveColor)
+            }
+
+            SlidanetSharingStyleType.SlideUpAndDown -> {
+                slideUpAndDownButton.setTextColor(Constants.buttonActiveColor)
                 slideButton.setTextColor(Constants.buttonActiveColor)
             }
 
@@ -436,16 +405,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
             SlidanetSharingStyleType.PeekSlide -> {
                 peekSlideButton.setTextColor(Constants.buttonActiveColor)
                 peekButton.setTextColor(Constants.buttonActiveColor)
-            }
-
-            SlidanetSharingStyleType.PixDefine -> {
-                pixDefineButton.setTextColor(Constants.buttonActiveColor)
-                pixButton.setTextColor(Constants.buttonActiveColor)
-            }
-
-            SlidanetSharingStyleType.PixSlide -> {
-                pixSlideButton.setTextColor(Constants.buttonActiveColor)
-                pixButton.setTextColor(Constants.buttonActiveColor)
             }
 
             else -> {}

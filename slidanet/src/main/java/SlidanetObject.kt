@@ -19,14 +19,10 @@ internal interface SlidanetObject {
     fun getHideEnabled(): Boolean
     fun setShareMode(mode: SlidanetSharingStyleType)
     fun getShareMode(): SlidanetSharingStyleType
-    fun setPixPercentage(value: Float)
-    fun getPixPercentage(): Float
     fun setShaderName(name: String)
     fun getShaderName(): String
     fun setSlideEnabled(value: Boolean)
     fun getSlideEnabled(): Boolean
-    fun setPixEnabled(value: Boolean)
-    fun getPixEnabled(): Boolean
     fun setPeekEnabled(value: Boolean)
     fun getPeekEnabled(): Boolean
     fun setFadeBarrier(barrier: Float)
@@ -54,8 +50,6 @@ internal interface SlidanetObject {
     fun getBoxBeginY(): Float
     fun getBoxEndX(): Float
     fun getBoxEndY(): Float
-    fun getPixelWidth(): Int
-    fun getDynamicPixelWidth(): Int
     fun getRotationAngle(): Int
     fun getScale(): Float
     fun getRedMaskColor(): Float
@@ -96,11 +90,9 @@ internal interface SlidanetObject {
     fun getContentAddress() : String
     fun distributeTranslation()
     fun distributeMaskBox()
-    fun distributePixelWidth()
     fun setMoveCount(count: Int)
     fun getMoveCount() : Int
     fun incrementMoveCount()
-    fun setPixelWidth(pixelWidth: Int)
     fun getContentWasTaken() : Boolean
     fun setContentWasTaken(state: Boolean)
     fun setupEditor(initiator: SlidanetEditingInitiatorType)

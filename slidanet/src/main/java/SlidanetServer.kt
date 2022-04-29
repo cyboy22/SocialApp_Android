@@ -215,46 +215,8 @@ internal class SlidanetServer(): SlidanetRequest {
         }.send()
     }
 
-    override fun distributePixelWidth(contentAddress: String,
-                                      shareMode: SlidanetSharingStyleType,
-                                      pixelWidth: Int) {
-
-        SlidanetMessage(SlidanetMessageType.MoveContentRequest).apply {
-
-            putInteger(Constants.nameWidth, contentAddress.length)
-            putString(contentAddress)
-            putInteger(Constants.nameWidth, shareMode.ordinal)
-            putInteger(Constants.nameWidth, pixelWidth)
-
-        }.send()
-    }
-
     override fun logRequest(contentAddress: String, loggingType: SlidanetLoggingRequestType, requestCount: Int) {
 
-    }
-
-    override fun setShareModePix(requestId: Int,
-                                 contentAddress: String,
-                                 shareMode: SlidanetSharingStyleType,
-                                 boxBeginX: Float,
-                                 boxBeginY: Float,
-                                 boxEndX: Float,
-                                 boxEndY: Float,
-                                 pixWidth: Int) {
-
-        SlidanetMessage(SlidanetMessageType.SetContentShareModeRequest).apply {
-
-            putInteger(Constants.integerWidth, requestId)
-            putInteger(Constants.nameWidth, contentAddress.length)
-            putString(contentAddress)
-            putInteger(Constants.nameWidth, shareMode.ordinal)
-            putFloat(boxBeginX)
-            putFloat(boxBeginY)
-            putFloat(boxEndX)
-            putFloat(boxEndY)
-            putInteger(Constants.nameWidth, pixWidth)
-
-        }.send()
     }
 
     override fun setShareModePeek(requestId: Int,

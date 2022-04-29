@@ -19,17 +19,6 @@ internal interface SlidanetRequest {
                           boxBeginY: Float,
                           boxEndX: Float,
                           boxEndY: Float)
-    fun distributePixelWidth(contentAddress: String,
-                             shareMode: SlidanetSharingStyleType,
-                             pixelWidth: Int)
-    fun setShareModePix(requestId: Int,
-                        contentAddress: String,
-                        shareMode: SlidanetSharingStyleType,
-                        boxBeginX: Float,
-                        boxBeginY: Float,
-                        boxEndX: Float,
-                        boxEndY: Float,
-                        pixWidth: Int)
     fun setShareModePeek(requestId: Int,
                          contentAddress: String,
                          shareMode: SlidanetSharingStyleType,

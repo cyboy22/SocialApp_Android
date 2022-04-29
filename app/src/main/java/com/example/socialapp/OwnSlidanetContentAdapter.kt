@@ -70,11 +70,12 @@ class OwnSlidanetContentAdapter(): RecyclerView.Adapter<RecyclerView.ViewHolder>
             val constraintSet = ConstraintSet()
             constraintSet.clone(constraintLayout)
             slidanetView.layoutParams = ConstraintLayout.LayoutParams(objectWidth, objectHeight)
-            constraintSet.connect(slidanetView.id, ConstraintSet.TOP, itemView.id, ConstraintSet.TOP, 0)
-            constraintSet.connect(slidanetView.id, ConstraintSet.LEFT, itemView.id, ConstraintSet.LEFT, 0)
+            constraintSet.connect(slidanetView.id, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP, (50f * SocialApp.density).toInt())
+            constraintSet.connect(slidanetView.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT, (50f * SocialApp.density).toInt())
             constraintSet.applyTo(constraintLayout)
 
             itemView.addView(slidanetView)
+
         }
     }
 

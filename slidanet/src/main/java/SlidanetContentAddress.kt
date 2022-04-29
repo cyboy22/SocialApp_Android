@@ -65,7 +65,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     private var savedBoxBeginY = 0f
     private var savedBoxEndX = 0f
     private var savedBoxEndY = 0f
-    private var savedPixPercentage = 0f
     private var moveCount = 0
     private var contentWasTaken = false
     private var backgroundRedColor = 1f
@@ -76,21 +75,17 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     @Volatile private var giveEnabled = false
     @Volatile private var hideEnabled = false
     @Volatile internal var giveWasTaken = false
-    @Volatile internal var normalizedTranslationX = .5f
-    @Volatile internal var normalizedTranslationY = .5f
+    @Volatile internal var normalizedTranslationX = 1f
+    @Volatile internal var normalizedTranslationY = 1f
     @Volatile internal var normalizedTranslationZ = 1f
-    @Volatile internal var pixelWidth = Constants.defaultPixelWidth
-    @Volatile internal var dynamicPixelWidth = 1
     @Volatile internal var boxBeginX = 0f
     @Volatile internal var boxBeginY = 0f
     @Volatile internal var boxEndX = 0f
     @Volatile internal var boxEndY = 0f
     @Volatile internal var rotationAngle = Constants.noRotation
     @Volatile internal var shareMode = SlidanetSharingStyleType.SlideAllDirections
-    @Volatile internal var pixPercentage = 0f
     @Volatile internal var slideEnabled = false
     @Volatile internal var peekEnabled = false
-    @Volatile internal var pixEnabled = false
     @Volatile internal var fadeBarrier = .1f
     @Volatile internal var snapThreshold = .1f
     @Volatile internal var redMaskColor = 1f
@@ -352,10 +347,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             SlidanetSharingStyleType.SlideAllDirections -> distributeTranslation()
 
             SlidanetSharingStyleType.PeekDefine,
-            SlidanetSharingStyleType.PeekSlide,
-            SlidanetSharingStyleType.PixDefine -> distributeMaskBox()
-
-            SlidanetSharingStyleType.PixSlide -> distributePixelWidth()
+            SlidanetSharingStyleType.PeekSlide -> distributeMaskBox()
 
             else -> {}
         }
@@ -412,8 +404,16 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                     Slidanet.editorContentAddress = ""
 
-                    distributeTranslation()
+                    when (shareMode) {
 
+                        SlidanetSharingStyleType.SlideLeftAndRight,
+                        SlidanetSharingStyleType.SlideUpAndDown,
+                        SlidanetSharingStyleType.SlideAllDirections -> distributeTranslation()
+
+                        SlidanetSharingStyleType.PeekDefine,
+                        SlidanetSharingStyleType.PeekSlide -> distributeMaskBox()
+
+                    }
                 }
             }
         }
@@ -481,7 +481,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         savedNormalizedTranslationX = normalizedTranslationX
         savedNormalizedTranslationY = normalizedTranslationY
         savedNormalizedTranslationZ = normalizedTranslationZ
-        savedPixPercentage = pixPercentage
         savedBoxBeginX = boxBeginX
         savedBoxBeginY = boxBeginY
         savedBoxEndX = boxEndX
@@ -539,47 +538,35 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                 when (shareMode) {
 
-                    /*
-                    ShareModeType.SlideRightToLeft -> {
 
-                        vertexCoordinates = floatArrayOf((2 * translationX)/editingScale,        1f, 0f, 0f, 1f,// top left
-                                                         (2 * translationX)/editingScale,       -1f, 0f, 0f, 0f,// bottom left
-                                                         (-2 * translationX)/editingScale + 1f, -1f, 0f, 1f, 0f,//bottom right
-                                                         (-2 * translationX)/editingScale + 1f,  1f, 0f, 1f, 1f) // top right
+                    SlidanetSharingStyleType.SlideLeftAndRight -> {
+
+                        vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, 1f,  0f, 0f, 1f,// top left
+                                                         (-1f + 2 * translationX)/scale, -1f, 0f, 0f, 0f,// bottom left
+                                                         (1f + 2 * translationX)/scale,  -1f , 0f, 1f, 0f,//bottom right
+                                                         (1f + 2 * translationX)/scale,  1f,  0f, 1f, 1f) // top right
                     }
 
-                    ShareModeType.SlideLeftToRight -> {
+                    SlidanetSharingStyleType.SlideUpAndDown -> {
 
-                        vertexCoordinates = floatArrayOf((2 * translationX)/editingScale - 1f,  1f, 0f, 0f, 1f,// top left
-                                                         (2 * translationX)/editingScale - 1f, -1f, 0f, 0f, 0f,// bottom left
-                                                         (-2 * translationX)/editingScale,     -1f, 0f, 1f, 0f,//bottom right
-                                                         (-2 * translationX)/editingScale,      1f, 0f, 1f, 1f) // top right
+                        vertexCoordinates = floatArrayOf(-1f, (1f + 2 * translationY)/scale,  0f, 0f, 1f,// top left
+                                                         -1f, (-1f + 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
+                                                         1f,  (-1f + 2 * translationY)/scale, 0f, 1f, 0f,//bottom right
+                                                         1f,  (1f + 2 * translationY)/scale,  0f, 1f, 1f) // top right
                     }
 
-                    ShareModeType.SlideTopToBottom -> {
+                    SlidanetSharingStyleType.PeekSlide,
+                    SlidanetSharingStyleType.PeekDefine -> {
 
-                        vertexCoordinates = floatArrayOf( -1f, (2 * translationY)/editingScale + 1f,  0f, 0f, 1f,// top left
-                                                          -1f, (2 * translationY)/editingScale,       0f, 0f, 0f,// bottom left
-                                                           1f,  (2 * translationY)/editingScale,      0f, 1f, 0f,//bottom right
-                                                           1f,  (2 * translationY)/editingScale + 1f, 0f, 1f, 1f) // top right
-
+                        vertexCoordinates = floatArrayOf(-1f,  1f, 0f, 0f, 1f,// top left
+                                                         -1f, -1f, 0f, 0f, 0f,// bottom left
+                                                         1f,  -1f, 0f, 1f, 0f,//bottom right
+                                                         1f,  1f,  0f, 1f, 1f) // top right
 
                     }
 
-                    ShareModeType.SlideBottomToTop -> {
-                        vertexCoordinates = floatArrayOf( -1f, (2 * translationY)/editingScale,      0f, 0f, 1f,// top left
-                                                          -1f, (2 * translationY)/editingScale - 1f, 0f, 0f, 0f,// bottom left
-                                                           1f, (2 * translationY)/editingScale - 1f, 0f, 1f, 0f,//bottom right
-                                                           1f, (2 * translationY)/editingScale,      0f, 1f, 1f) // top right
-                    }
-                    */
                     SlidanetSharingStyleType.SlideAllDirections -> {
-/*
-                        vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, (1f - 2 * translationY)/scale,  0f, 0f, 1f,// top left
-                                                         (-1f + 2 * translationX)/scale, (-1f - 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
-                                                         (1f + 2 * translationX)/scale,  (-1f - 2 * translationY)/scale, 0f, 1f, 0f,//bottom right
-                                                         (1f + 2 * translationX)/scale,  (1f - 2 * translationY)/scale,  0f, 1f, 1f) // top right
-*/
+
                         vertexCoordinates = floatArrayOf((-1f + 2 * translationX)/scale, (1f + 2 * translationY)/scale,  0f, 0f, 1f,// top left
                                                          (-1f + 2 * translationX)/scale, (-1f + 2 * translationY)/scale, 0f, 0f, 0f,// bottom left
                                                          (1f + 2 * translationX)/scale,  (-1f + 2 * translationY)/scale, 0f, 1f, 0f,//bottom right
@@ -788,36 +775,33 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     override fun copyOwnerParametersToEditor(contentAddress: String) {
 
-        Slidanet.slidanetContentAddresses[contentAddress]?.let {
+        Slidanet.slidanetContentAddresses[contentAddress]?.let {sourceObject ->
 
-            shareMode = it.getShareMode()
-            contentAddressOwner = it.getContentAddressOwner()
-            updateDuringEdit = it.getUpdateDuringEdit()
-            rotationAngle = it.getRotationAngle()
+            shareMode = sourceObject.getShareMode()
+            peekEnabled = sourceObject.getPeekEnabled()
+            contentAddressOwner = sourceObject.getContentAddressOwner()
+            updateDuringEdit = sourceObject.getUpdateDuringEdit()
+            rotationAngle = sourceObject.getRotationAngle()
             moveRequestCount = 0
-            contentPath = it.getContentPath()
-            contentType = it.getContentType()
-            shaderName = it.getShaderName()
-            editingScale = it.getEditingScale()
-            editorContentAddress = it.getEditorContentAddress()
-            fadeBarrier = it.getFadeBarrier()
-            snapThreshold = it.getSnapThreshold()
-            flipTexture = it.getFlipTexture()
-            redMaskColor = it.getRedMaskColor()
-            greenMaskColor = it.getGreenMaskColor()
-            blueMaskColor = it.getBlueMaskColor()
-            alphaMaskColor = it.getAlphaMaskColor()
-            startTime = it.getStartTime()
-            hideEnabled = it.getHideEnabled()
-            doubleTapEditingEnabled = it.getDoubleTapEditingEnabled()
-            redMaskColor = it.getRedMaskColor()
-            greenMaskColor = it.getGreenMaskColor()
-            blueMaskColor = it.getBlueMaskColor()
-            alphaMaskColor = it.getAlphaMaskColor()
-            flipTexture = it.getFlipTexture()
-            textureWidth = it.getTextureWidth()
-            textureHeight = it.getTextureHeight()
-            editorContentAddress = it.getContentAddress()
+            contentPath = sourceObject.getContentPath()
+            contentType = sourceObject.getContentType()
+            shaderName = sourceObject.getShaderName()
+            editingScale = sourceObject.getEditingScale()
+            editorContentAddress = sourceObject.getEditorContentAddress()
+            fadeBarrier = sourceObject.getFadeBarrier()
+            snapThreshold = sourceObject.getSnapThreshold()
+            flipTexture = sourceObject.getFlipTexture()
+            redMaskColor = sourceObject.getRedMaskColor()
+            greenMaskColor = sourceObject.getGreenMaskColor()
+            blueMaskColor = sourceObject.getBlueMaskColor()
+            alphaMaskColor = Constants.editorAlphaMaskColor
+            startTime = sourceObject.getStartTime()
+            hideEnabled = sourceObject.getHideEnabled()
+            doubleTapEditingEnabled = sourceObject.getDoubleTapEditingEnabled()
+            flipTexture = sourceObject.getFlipTexture()
+            textureWidth = sourceObject.getTextureWidth()
+            textureHeight = sourceObject.getTextureHeight()
+            editorContentAddress = sourceObject.getContentAddress()
 
             when (shareMode) {
 
@@ -825,24 +809,18 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                 SlidanetSharingStyleType.SlideUpAndDown,
                 SlidanetSharingStyleType.SlideAllDirections-> {
 
-                    normalizedTranslationX = it.getNormalizedTranslationX()
-                    normalizedTranslationY = it.getNormalizedTranslationY()
-                    normalizedTranslationZ = it.getNormalizedTranslationZ()
+                    normalizedTranslationX = sourceObject.getNormalizedTranslationX()
+                    normalizedTranslationY = sourceObject.getNormalizedTranslationY()
+                    normalizedTranslationZ = sourceObject.getNormalizedTranslationZ()
                 }
 
                 SlidanetSharingStyleType.PeekDefine,
                 SlidanetSharingStyleType.PeekSlide-> {
 
-                    boxBeginX = it.getBoxBeginX()
-                    boxBeginY = it.getBoxBeginY()
-                    boxEndX = it.getBoxEndX()
-                    boxEndY = it.getBoxEndY()
-                }
-
-                SlidanetSharingStyleType.PixDefine,
-                SlidanetSharingStyleType.PixSlide-> {
-
-                    pixPercentage = it.getPixPercentage()
+                    boxBeginX = sourceObject.getBoxBeginX()
+                    boxBeginY = sourceObject.getBoxBeginY()
+                    boxEndX = sourceObject.getBoxEndX()
+                    boxEndY = sourceObject.getBoxEndY()
                 }
 
                 else -> {}
@@ -869,21 +847,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             }
 
             initializeTexture()
-        }
-    }
-
-    override fun setPixelWidth(pixelWidth: Int) {
-
-        this.pixelWidth = pixelWidth
-    }
-
-    override fun distributePixelWidth() {
-
-        Slidanet.rendererHandler.post {
-
-            Slidanet.server.distributePixelWidth(contentAddress,
-                shareMode,
-                pixelWidth)
         }
     }
 
@@ -965,7 +928,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             boxBeginX = savedBoxBeginX
             boxBeginY = savedBoxBeginY
             boxEndX = savedBoxEndX
-            pixPercentage = savedPixPercentage
             displayNeedsUpdate = true
 
         }
@@ -1071,15 +1033,15 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            SlidanetSharingStyleType.SlideAllDirections -> {
+            SlidanetSharingStyleType.SlideAllDirections,
+            SlidanetSharingStyleType.SlideUpAndDown,
+            SlidanetSharingStyleType.SlideLeftAndRight -> {
 
                 editingScale = 3f
             }
 
             SlidanetSharingStyleType.PeekDefine,
-            SlidanetSharingStyleType.PeekSlide,
-            SlidanetSharingStyleType.PixDefine,
-            SlidanetSharingStyleType.PixSlide -> {
+            SlidanetSharingStyleType.PeekSlide -> {
 
                 editingScale = 1f
             }
@@ -1097,7 +1059,11 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         when (shareMode) {
 
-            SlidanetSharingStyleType.SlideAllDirections -> {
+            SlidanetSharingStyleType.SlideAllDirections,
+            SlidanetSharingStyleType.SlideLeftAndRight,
+            SlidanetSharingStyleType.PeekDefine,
+            SlidanetSharingStyleType.PeekSlide,
+            SlidanetSharingStyleType.SlideUpAndDown -> {
 
                 Slidanet.editorContent?.let {
 
@@ -1109,28 +1075,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                 }
             }
 
-            /*
-            ShareModeType.SlideRightToLeft -> {
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.TOP, this.id, ConstraintSet.TOP, 0)
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.LEFT, this.id, ConstraintSet.LEFT, 0)
-            }
-
-            ShareModeType.SlideLeftToRight -> {
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.TOP, this.id, ConstraintSet.TOP, 0)
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.RIGHT, this.id, ConstraintSet.RIGHT, 0)
-
-            }
-            ShareModeType.SlideTopToBottom -> {
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.LEFT, this.id, ConstraintSet.LEFT, 0)
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.BOTTOM, this.id, ConstraintSet.BOTTOM, 0)
-            }
-
-            ShareModeType.SlideBottomToTop-> {
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.TOP, this.id, ConstraintSet.TOP, 0)
-                constraintSet.connect(Slidanet.referenceView.id, ConstraintSet.LEFT, this.id, ConstraintSet.LEFT, 0)
-            }
-            */
-
             else -> {}
         }
 
@@ -1138,23 +1082,60 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
         if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
 
-            RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity).toInt(),
-                                        (nh.toFloat() * Slidanet.screenDensity).toInt()).also {
-                it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                this.layoutParams = it
+            when (shareMode) {
+
+                SlidanetSharingStyleType.SlideLeftAndRight -> {
+
+                    RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity).toInt(),
+                                                (nw.toFloat() /3f / aspectRatio * Slidanet.screenDensity).toInt()).also {
+                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                        this.layoutParams = it
+                    }
+                }
+
+                SlidanetSharingStyleType.SlideUpAndDown -> {
+
+                    RelativeLayout.LayoutParams((nw.toFloat() /3f * Slidanet.screenDensity).toInt(),
+                                                (nh.toFloat() * Slidanet.screenDensity).toInt()).also {
+                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                        this.layoutParams = it
+                    }
+                }
+
+                else -> {
+
+                    RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity).toInt(),
+                                                (nh.toFloat() * Slidanet.screenDensity).toInt()).also {
+                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                        this.layoutParams = it
+                    }
+                }
+            }
+
+            if (shareMode == SlidanetSharingStyleType.PeekSlide ||
+                shareMode == SlidanetSharingStyleType.PeekDefine) {
+
+                    Slidanet.referenceView.setBackgroundColor(Color.BLACK)
+            } else {
+
+                Slidanet.referenceView.setBackgroundColor(Color.TRANSPARENT)
+            }
+
+            if (shareMode == SlidanetSharingStyleType.PeekSlide ||
+                shareMode == SlidanetSharingStyleType.PeekDefine) {
+
+                Slidanet.relativeLayout?.addView(Slidanet.referenceView)
             }
 
             Slidanet.relativeLayout?.addView(this)
 
             if (shareMode != SlidanetSharingStyleType.PeekSlide &&
-                shareMode != SlidanetSharingStyleType.PeekDefine &&
-                shareMode != SlidanetSharingStyleType.PeekSlide &&
-                shareMode != SlidanetSharingStyleType.PixSlide) {
+                shareMode != SlidanetSharingStyleType.PeekDefine) {
 
                 Slidanet.relativeLayout?.addView(Slidanet.referenceView)
-                Slidanet.editorContent?.addView(Slidanet.relativeLayout)
             }
 
+            Slidanet.editorContent?.addView(Slidanet.relativeLayout)
             Slidanet.editorContent?.addView(Slidanet.editorControl)
         }
     }
@@ -1212,16 +1193,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     override fun getBoxEndY(): Float {
 
         return boxEndY
-    }
-
-    override fun getPixelWidth(): Int {
-
-        return pixelWidth
-    }
-
-    override fun getDynamicPixelWidth(): Int {
-
-        return dynamicPixelWidth
     }
 
     override fun getRotationAngle(): Int {
@@ -1366,11 +1337,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     }
 
-    private fun initializePixelWidth() : Int {
-
-        return pixelWidth
-    }
-
     override fun getIndicesBuffer() : ShortBuffer {
 
         return indicesBuffer
@@ -1382,14 +1348,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             makeCurrent(windowSurface)
 
-
-            /*
-            this.setContentBackgroundColor(backgroundRedColor,
-                                           backgroundBlueColor,
-                                           backgroundGreenColor,
-                                           0f)
-            */
-
             this.clearSurface()
 
             this.setViewport(textureWidth, textureHeight)
@@ -1400,25 +1358,29 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                 activateTexture(GLES20.GL_TEXTURE_2D, editorBackgroundTextureId)
 
+                var backgroundAlpha = 0f
+                if (shareMode == SlidanetSharingStyleType.PeekDefine ||
+                    shareMode == SlidanetSharingStyleType.PeekSlide) {
+
+                    backgroundAlpha = 1f
+                }
+
                 loadShader(SlidanetShaderContext(contentFilter = contentFilter,
-                    verticesBuffer = backgroundVertexBuffer,
-                    boxBeginX = boxBeginX,
-                    boxBeginY = boxBeginY,
-                    boxEndX = boxEndX,
-                    boxEndY = boxEndY,
-                    viewType = contentType,
-                    flipTexture = flipTexture,
-                    peekItEnabled = peekEnabled,
-                    pixItEnabled = pixEnabled,
-                    pixelWidth = initializePixelWidth(),
-                    pixelHeight = initializePixelWidth(),
-                    maskRedValue = redMaskColor,
-                    maskGreenValue = greenMaskColor,
-                    maskBlueValue = blueMaskColor,
-                    maskAlphaValue = alphaMaskColor,
-                    textureWidth = textureWidth,
-                    textureHeight = textureHeight,
-                    alpha = 0f))
+                                                verticesBuffer = backgroundVertexBuffer,
+                                                boxBeginX = boxBeginX,
+                                                boxBeginY = boxBeginY,
+                                                boxEndX = boxEndX,
+                                                boxEndY = boxEndY,
+                                                viewType = contentType,
+                                                flipTexture = flipTexture,
+                                                peekItEnabled = peekEnabled,
+                                                maskRedValue = redMaskColor,
+                                                maskGreenValue = greenMaskColor,
+                                                maskBlueValue = blueMaskColor,
+                                                maskAlphaValue = alphaMaskColor,
+                                                textureWidth = textureWidth,
+                                                textureHeight = textureHeight,
+                                                alpha = backgroundAlpha))
 
 /*
                 loadShader(SlidanetShaderContext(contentFilter = contentFilter,
@@ -1456,9 +1418,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                                                  viewType = contentType,
                                                  flipTexture = flipTexture,
                                                  peekItEnabled = peekEnabled,
-                                                 pixItEnabled = pixEnabled,
-                                                 pixelWidth = initializePixelWidth(),
-                                                 pixelHeight = initializePixelWidth(),
                                                  maskRedValue = redMaskColor,
                                                  maskGreenValue = greenMaskColor,
                                                  maskBlueValue = blueMaskColor,
@@ -1470,7 +1429,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             drawElements( indicesBuffer, 6)
 
-            if (contentType == SlidanetContentType.StaticVideo) {
+                if (contentType == SlidanetContentType.StaticVideo) {
                 /*
                 if (!textureView.getVideoIsRunning()) {
                         activateTexture(GLES20.GL_TEXTURE_2D, textureView.getTextureId())
@@ -1495,9 +1454,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                                              viewType = contentType,
                                              flipTexture = flipTexture,
                                              peekItEnabled = peekEnabled,
-                                             pixItEnabled = pixEnabled,
-                                             pixelWidth = initializePixelWidth(),
-                                             pixelHeight = initializePixelWidth(),
                                              maskRedValue = redMaskColor,
                                              maskGreenValue = greenMaskColor,
                                              maskBlueValue = blueMaskColor,
@@ -1583,17 +1539,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         contentAlpha = alpha
     }
 
-
-    override fun setPixPercentage(value: Float) {
-
-        pixPercentage = value
-    }
-
-    override fun getPixPercentage(): Float {
-
-        return pixPercentage
-    }
-
     override fun setShaderName(name: String) {
 
         shaderName = name
@@ -1612,16 +1557,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     override fun getSlideEnabled(): Boolean {
 
         return slideEnabled
-    }
-
-    override fun setPixEnabled(value: Boolean) {
-
-        pixEnabled = value
-    }
-
-    override fun getPixEnabled(): Boolean {
-
-        return pixEnabled
     }
 
     override fun setPeekEnabled(value: Boolean) {

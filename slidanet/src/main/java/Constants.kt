@@ -61,11 +61,11 @@ internal object Constants {
     const val defaultBorderWidth = 5
     const val share_style = "share_style"
     const val peek = "peek"
-    const val pix = "pix"
     const val slide = "slide"
     const val defaultShaderName = "default"
     const val doubleTapInterval = 700
     const val pointerDownTimeInterval = 500
     const val maskColorOwnerAlpha = .3f
     const val maskColorFollowerAlpha = 1f
+    const val editorAlphaMaskColor = .85f
 }

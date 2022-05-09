@@ -21,8 +21,7 @@ internal class SlidanetMessage {
         readBody = ByteArrayInputStream(data)
     }
 
-    init {
-    }
+    init {}
 
     fun putString(value: String) {
 
@@ -48,6 +47,7 @@ internal class SlidanetMessage {
     fun putFloat(value: Float) {
 
         String.format(Slidanet.locale, "%10.3f", value).apply {
+
             this.toByteArray(Charset.forName("UTF-8")).let {
 
                 writeBody.write(it, 0, it.size)

@@ -538,7 +538,7 @@ object Constants {
 
                                  if (contentType == ContentType.Text.ordinal) {
 
-                                     val file = File(contentId)
+                                     //val file = File(contentId)
 
                                      val cw = ContextWrapper(applicationContext)
                                      val directory = cw.getDir(Constants.contentDirectory, Context.MODE_PRIVATE)
@@ -549,18 +549,18 @@ object Constants {
 
                                      val bitmapFile = File(directory, contentId)
 
-                                     //if (!bitmapFile.exists()) {
+                                     if (!bitmapFile.exists()) {
 
-                                         val bitmap = Slidanet.textToImage(text,
-                                                                           Typeface.DEFAULT,
-                                                                   12.0F,
-                                                                           Color.BLACK,
-                                                                           Color.WHITE,
-                                                                           density,
-                                                                           Constants.textIndent,
-                                                                           applicationContext)
+                                         val bitmap = Slidanet.textToImage(text = text,
+                                                                           typeface = Typeface.DEFAULT,
+                                                                           fontSize = .0F,
+                                                                           textColor = Color.BLACK,
+                                                                           textBackgroundColor = Color.WHITE,
+                                                                           screenDensity = density,
+                                                                           textIndent = Constants.textIndent,
+                                                                           context = applicationContext)
                                          storeImage(bitmap, contentId)
-                                     //}
+                                     }
                                  }
                              }
 

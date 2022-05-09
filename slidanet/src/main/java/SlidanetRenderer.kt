@@ -9,6 +9,7 @@ import android.view.Choreographer
 import android.view.Choreographer.FrameCallback
 import android.view.Surface
 import com.example.slidanet.R
+import org.json.JSONObject
 import java.lang.IllegalStateException
 import java.nio.ShortBuffer
 
@@ -278,14 +279,23 @@ internal class SlidanetRenderer {
             val slidaView = v.value
             if (slidaView.getDisplayNeedsUpdate())
 
-                if (slidaView.getTextureViewReady()) slidaView.render()
+                if (slidaView.getTextureViewReady()) {
+
+                    slidaView.render()
+                    slidaView.setDisplayNeedsUpdate(false)
+                }
         }
 
         editorObject?.let {
 
             if (it.getDisplayNeedsUpdate())
 
-                if (it.getTextureViewReady()) it.render()
+                if (it.getTextureViewReady())
+                {
+                    it.render()
+                    it.setDisplayNeedsUpdate(false)
+                }
+
         }
 
         if (enableRendering) {
@@ -515,6 +525,11 @@ internal class SlidanetRenderer {
 
         } ?: kotlin.run {
 
+            val request = JSONObject()
+            val response = SlidanetResponseData(requestCode = SlidanetRequestType.APIMessage,
+                                                requestInfo = request,
+                                                responseCode = SlidanetResponseType.InternalErrorOccurred)
+            Slidanet.mainHandler?.post { Slidanet.slidanetResponseHandler.slidanetResponse(response) }
         }
     }
 }

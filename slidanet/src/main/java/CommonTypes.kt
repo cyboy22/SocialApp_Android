@@ -19,6 +19,7 @@
                                  HideContent,
                                  UnhideContent,
                                  DoneEditContent,
+                                 APIMessage,
                                  MaxValue }
 
 enum class SlidanetSharingStyleType { SlideLeftAndRight,
@@ -26,6 +27,7 @@ enum class SlidanetSharingStyleType { SlideLeftAndRight,
                                       SlideAllDirections,
                                       PeekDefine,
                                       PeekSlide,
+                                      Zoom,
                                       MaxValue }
 
  enum class SlidanetActionType { AnimateIntoView,

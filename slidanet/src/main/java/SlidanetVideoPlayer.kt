@@ -1153,10 +1153,7 @@ internal class SlidanetVideoPlayer(val outputSurface: Surface,
 
                 if (debug) {
 
-                    Log.d(
-                        tagStatic,
-                        "Extractor selected track $i ($mime): $format"
-                    )
+                    Log.d(tagStatic, "Extractor selected track $i ($mime): $format")
                 }
                 return i
             }

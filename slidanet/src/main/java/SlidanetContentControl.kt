@@ -19,13 +19,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                                                                 GestureDetector.OnDoubleTapListener
 {
 
-    /*
-    private var availableRight: Float = 0f
-    private var availableLeft: Float = 0f
-    private var availableUp: Float = 0f
-    private var availableDown: Float = 0f
-
-     */
     private var boxStartPosition = Point(0,0)
     private var boxEndPosition = Point(0,0)
     private var currentTouchPosition = Point(0, 0)
@@ -56,13 +49,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     }
 
     internal fun initialize() {
-/*
-        availableRight = 0f
-        availableLeft = 0f
-        availableUp = 0f
-        availableDown = 0f
 
- */
         boxStartPosition = Point(0,0)
         boxEndPosition = Point(0,0)
         currentTouchPosition = Point(0, 0)
@@ -139,6 +126,7 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
             } else if (Slidanet.ownerEditingInProgress) {
 
                 Slidanet.contentInEditor?.let { ownerObject ->
+
                     viewPosition = ownerObject.getViewPosition()
                     subjectFrame.x = ownerObject.getTextureWidth()
                     subjectFrame.y = ownerObject.getTextureHeight()
@@ -183,11 +171,11 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                             Slidanet.requestId++
                             val request = JSONObject()
                             request.put(SlidanetConstants.slidanet_content_address, followerObject.getContentWasTaken())
-                            Slidanet.requests[Slidanet.requestId] = SlidanetResponseData(SlidanetRequestType.TakeContent,
-                                                                                         request,
-                                                                                         SlidanetResponseType.Undefined)
-                            Slidanet.server.takeContentAddress(Slidanet.requestId,
-                                                               followerObject.getContentAddress())
+                            Slidanet.requests[Slidanet.requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.TakeContent,
+                                                                                         requestInfo = request,
+                                                                                         responseCode = SlidanetResponseType.Undefined)
+                            Slidanet.server.takeContentAddress(requestId = Slidanet.requestId,
+                                                               contentAddress = followerObject.getContentAddress())
                         }
                     }
 
@@ -230,523 +218,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
         }
     }
 
-    /*
-    private fun processMoveRightToLeft() {
-
-        try {
-
-            var w = 0f
-            var h = 0f
-            var editingScale = 1f
-
-            if (Slidanet.ownerEditingInProgress) {
-
-                w = requireNotNull(Slidanet.contentInEditor?.getTextureWidth()?.toFloat())
-                h = requireNotNull(Slidanet.contentInEditor?.getTextureHeight()?.toFloat())
-                editingScale = requireNotNull(Slidanet.contentInEditor?.getEditingScale())
-
-
-            } else if (Slidanet.followerTakeInProgress) {
-
-                Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {
-
-                    w = requireNotNull(it.getTextureWidth().toFloat())
-                    h = requireNotNull(it.getTextureHeight().toFloat())
-                    editingScale = it.getEditingScale()
-
-                }
-            }
-
-            if (w > 0f && h > 0f && editingScale > 0f) {
-
-                val a = w/h
-
-                val scaleDeltaX = w * a
-                var normalizedTranslationX = 0f
-                val normalizedTranslationY = 0f
-
-                if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
-                    lastTouchPosition = currentTouchPosition
-                }
-
-                val viewNormalizedDeltaX =
-                    ((currentTouchPosition.x - lastTouchPosition.x).toFloat() / controlFrame.x.toFloat()) * scaleDeltaX
-
-                lastTouchPosition.x = currentTouchPosition.x
-
-                if (viewNormalizedDeltaX > 0f) {
-
-                    if (availableRight <= viewNormalizedDeltaX.absoluteValue) {
-
-                        availableLeft = 2f/editingScale
-                        availableRight = 0f
-                        normalizedTranslationX = 1f
-
-
-                    } else if (availableRight > viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight -= viewNormalizedDeltaX
-                        availableLeft += viewNormalizedDeltaX
-                        normalizedTranslationX = 1f - availableRight
-                    }
-
-                } else if (viewNormalizedDeltaX < 0f) {
-
-                    if (availableLeft <= viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight = 2f/editingScale
-                        availableLeft = 0f
-                        normalizedTranslationX = -1f
-
-                    } else if (availableLeft > viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight -= viewNormalizedDeltaX
-                        availableLeft += viewNormalizedDeltaX
-                        normalizedTranslationX = 1f - availableRight
-                    }
-                }
-
-                if (normalizedTranslationX != lastNormalizedTranslationX) {
-
-                    lastNormalizedTranslationX = normalizedTranslationX
-
-                    Slidanet.rendererHandler.post {
-
-                        if (Slidanet.followerTakeInProgress) {
-
-                            Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {followerObject ->
-
-                                followerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                followerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                followerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                followerObject.setDisplayNeedsUpdate(true)
-                            }
-
-                        } else if (Slidanet.ownerEditingInProgress) {
-
-                            Slidanet.contentInEditor?.let {ownerObject ->
-
-                                ownerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                ownerObject.setDisplayNeedsUpdate(true)
-
-
-                                if (ownerObject.getUpdateDuringEdit()) {
-                                    ownerObject.incrementMoveCount()
-
-                                    Slidanet.slidanetViews[ownerObject.getContentAddress()]?.let { subjectContentAddress ->
-
-                                        subjectContentAddress.setNormalizedTranslationX(normalizedTranslationX)
-                                        subjectContentAddress.setNormalizedTranslationY(normalizedTranslationY)
-                                        subjectContentAddress.initializeVertices(normalizedTranslationX,
-                                                                                 normalizedTranslationY)
-                                        subjectContentAddress.setDisplayNeedsUpdate(true)
-                                        subjectContentAddress.incrementMoveCount()
-                                        subjectContentAddress.distributeMove()
-                                    }
-                                } else {
-                                    ownerObject.setMoveCount(1)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        } catch (e: IllegalArgumentException) {
-
-        }
-    }
-
-    private fun processMoveLeftToRight() {
-
-        try {
-
-            var w = 0f
-            var h = 0f
-            var editingScale = 1f
-
-            if (Slidanet.ownerEditingInProgress) {
-
-                w = requireNotNull(Slidanet.contentInEditor?.getTextureWidth()?.toFloat())
-                h = requireNotNull(Slidanet.contentInEditor?.getTextureHeight()?.toFloat())
-                editingScale = requireNotNull(Slidanet.contentInEditor?.getEditingScale())
-
-
-            } else if (Slidanet.followerTakeInProgress) {
-
-                Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {
-
-                    w = requireNotNull(it.getTextureWidth().toFloat())
-                    h = requireNotNull(it.getTextureHeight().toFloat())
-                    editingScale = it.getEditingScale()
-
-                }
-            }
-
-            if (w > 0f && h > 0f && editingScale > 0f) {
-
-                val a = w/h
-
-                val scaleDeltaX = w * a
-                var normalizedTranslationX = 0f
-                val normalizedTranslationY = 0f
-
-                if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
-                    lastTouchPosition = currentTouchPosition
-                }
-
-                val viewNormalizedDeltaX =
-                    ((currentTouchPosition.x - lastTouchPosition.x).toFloat() / controlFrame.x.toFloat()) * scaleDeltaX
-
-                lastTouchPosition.x = currentTouchPosition.x
-
-                if (viewNormalizedDeltaX > 0f) {
-
-                    if (availableRight <= viewNormalizedDeltaX.absoluteValue) {
-
-                        availableLeft = 2f/editingScale
-                        availableRight = 0f
-                        normalizedTranslationX = 1f
-
-                    } else if (availableRight > viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight -= viewNormalizedDeltaX
-                        availableLeft += viewNormalizedDeltaX
-                        normalizedTranslationX = 1f - availableRight
-                    }
-
-                } else if (viewNormalizedDeltaX < 0f) {
-
-                    if (availableLeft <= viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight = 2f/editingScale
-                        availableLeft = 0f
-                        normalizedTranslationX = -1f
-
-                    } else if (availableLeft > viewNormalizedDeltaX.absoluteValue) {
-
-                        availableRight -= viewNormalizedDeltaX
-                        availableLeft += viewNormalizedDeltaX
-                        normalizedTranslationX = 1f - availableRight
-                    }
-                }
-
-                if (normalizedTranslationX != lastNormalizedTranslationX) {
-
-                    lastNormalizedTranslationX = normalizedTranslationX
-
-                    Slidanet.rendererHandler.post {
-
-                        if (Slidanet.followerTakeInProgress) {
-
-                            Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {followerObject ->
-
-                                followerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                followerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                followerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                followerObject.setDisplayNeedsUpdate(true)
-                            }
-
-                        } else if (Slidanet.ownerEditingInProgress) {
-
-                            Slidanet.rendererHandler.post {
-
-                                Slidanet.contentInEditor?.let { ownerObject ->
-
-                                    ownerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                    ownerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                    ownerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                    ownerObject.setDisplayNeedsUpdate(true)
-
-                                    if (ownerObject.getUpdateDuringEdit()) {
-
-                                        ownerObject.incrementMoveCount()
-
-                                        Slidanet.slidanetViews[ownerObject.getContentAddress()]?.let { subjectContentAddress ->
-
-                                            subjectContentAddress.setNormalizedTranslationX(normalizedTranslationX)
-                                            subjectContentAddress.setNormalizedTranslationY(normalizedTranslationY)
-                                            subjectContentAddress.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                            subjectContentAddress.setDisplayNeedsUpdate(true)
-                                            subjectContentAddress.incrementMoveCount()
-                                            subjectContentAddress.distributeMove()
-                                        }
-                                    } else {
-                                        ownerObject.setMoveCount(1)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        } catch (e: IllegalArgumentException) {
-
-        }
-    }
-
-    private fun processMoveTopToBottom() {
-
-        try {
-
-            var w = 0f
-            var h = 0f
-            var editingScale = 1f
-
-            if (Slidanet.ownerEditingInProgress) {
-
-                w = requireNotNull(Slidanet.contentInEditor?.getTextureWidth()?.toFloat())
-                h = requireNotNull(Slidanet.contentInEditor?.getTextureHeight()?.toFloat())
-                editingScale = requireNotNull(Slidanet.contentInEditor?.getEditingScale())
-
-
-            } else if (Slidanet.followerTakeInProgress) {
-
-                Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {
-
-                    w = requireNotNull(it.getTextureWidth().toFloat())
-                    h = requireNotNull(it.getTextureHeight().toFloat())
-                    editingScale = it.getEditingScale()
-
-                }
-            }
-
-            if (w > 0f && h > 0f && editingScale > 0f) {
-
-                val a = w/h
-
-                val scaleDeltaY = w / a
-                var normalizedTranslationX = 0f
-                var normalizedTranslationY = 0f
-
-                if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
-                    lastTouchPosition = currentTouchPosition
-                }
-
-                val viewNormalizedDeltaY =
-                    ((currentTouchPosition.y - lastTouchPosition.y).toFloat() / controlFrame.y.toFloat()) * scaleDeltaY
-
-                lastTouchPosition.x = currentTouchPosition.x
-                lastTouchPosition.y = currentTouchPosition.y
-
-                if (viewNormalizedDeltaY > 0f) {
-
-                    if (availableDown <= viewNormalizedDeltaY.absoluteValue) {
-
-                        availableUp = 2f/editingScale
-                        availableDown = 0f
-                        normalizedTranslationY = 1f
-
-                    } else if (availableDown > viewNormalizedDeltaY.absoluteValue) {
-                        availableDown -= viewNormalizedDeltaY
-                        availableUp += viewNormalizedDeltaY
-                        normalizedTranslationY = -(1f - availableUp)
-                    }
-
-                } else if (viewNormalizedDeltaY < 0f) {
-
-                    if (availableUp <= viewNormalizedDeltaY.absoluteValue) {
-
-                        availableDown = 2f/editingScale
-                        availableUp = 0f
-                        normalizedTranslationY = -1f
-
-                    } else if (availableUp > viewNormalizedDeltaY.absoluteValue) {
-
-                        availableUp += viewNormalizedDeltaY
-                        availableDown -= viewNormalizedDeltaY
-                        normalizedTranslationY = -(1f - availableUp)
-                    }
-                }
-
-                if ((normalizedTranslationX != lastNormalizedTranslationX) || normalizedTranslationY != lastNormalizedTranslationY) {
-
-                    lastNormalizedTranslationX = normalizedTranslationX
-                    lastNormalizedTranslationY = normalizedTranslationY
-
-                    Slidanet.rendererHandler.post {
-
-                        if (Slidanet.followerTakeInProgress) {
-
-                            Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {followerObject ->
-
-                                followerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                followerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                followerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                followerObject.setDisplayNeedsUpdate(true)
-                            }
-
-                        } else if (Slidanet.ownerEditingInProgress) {
-
-                            Slidanet.rendererHandler.post {
-
-                                Slidanet.contentInEditor?.let { ownerObject ->
-
-                                    ownerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                    ownerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                    ownerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                    ownerObject.setDisplayNeedsUpdate(true)
-
-                                    if (ownerObject.getUpdateDuringEdit()) {
-
-                                        ownerObject.incrementMoveCount()
-
-                                        Slidanet.slidanetViews[ownerObject.getContentAddress()]?.let { subjectContentAddress ->
-
-                                            subjectContentAddress.setNormalizedTranslationX(normalizedTranslationX)
-                                            subjectContentAddress.setNormalizedTranslationY(normalizedTranslationY)
-                                            subjectContentAddress.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                            subjectContentAddress.setDisplayNeedsUpdate(true)
-                                            subjectContentAddress.incrementMoveCount()
-                                            subjectContentAddress.distributeMove()
-                                        }
-                                    } else {
-                                        ownerObject.setMoveCount(1)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        } catch (e: IllegalArgumentException) {
-
-        }
-
-    }
-
-    private fun processMoveBottomToTop() {
-
-        try {
-
-            var w = 0f
-            var h = 0f
-            var editingScale = 1f
-
-            if (Slidanet.ownerEditingInProgress) {
-
-                w = requireNotNull(Slidanet.contentInEditor?.getTextureWidth()?.toFloat())
-                h = requireNotNull(Slidanet.contentInEditor?.getTextureHeight()?.toFloat())
-                editingScale = requireNotNull(Slidanet.contentInEditor?.getEditingScale())
-
-
-            } else if (Slidanet.followerTakeInProgress) {
-
-                Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {
-
-                    w = requireNotNull(it.getTextureWidth().toFloat())
-                    h = requireNotNull(it.getTextureHeight().toFloat())
-                    editingScale = it.getEditingScale()
-
-                }
-            }
-
-            if (w > 0f && h > 0f && editingScale > 0f) {
-
-                val a = w/h
-
-                val scaleDeltaY = w / a
-                var normalizedTranslationX = 0f
-                var normalizedTranslationY = 0f
-
-                if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
-                    lastTouchPosition = currentTouchPosition
-                }
-
-                val viewNormalizedDeltaY =
-                    ((currentTouchPosition.y - lastTouchPosition.y).toFloat() / controlFrame.y.toFloat()) * scaleDeltaY
-
-                lastTouchPosition.x = currentTouchPosition.x
-                lastTouchPosition.y = currentTouchPosition.y
-
-                if (viewNormalizedDeltaY > 0f) {
-
-                    if (availableDown <= viewNormalizedDeltaY.absoluteValue) {
-
-                        availableUp = 2f/editingScale
-                        availableDown = 0f
-                        normalizedTranslationY = 1f
-
-                    } else if (availableDown > viewNormalizedDeltaY.absoluteValue) {
-                        availableDown -= viewNormalizedDeltaY
-                        availableUp += viewNormalizedDeltaY
-                        normalizedTranslationY = -(1f - availableUp)
-                    }
-
-                } else if (viewNormalizedDeltaY < 0f) {
-
-                    if (availableUp <= viewNormalizedDeltaY.absoluteValue) {
-
-                        availableDown = 2f/editingScale
-                        availableUp = 0f
-                        normalizedTranslationY = -1f
-
-                    } else if (availableUp > viewNormalizedDeltaY.absoluteValue) {
-
-                        availableUp += viewNormalizedDeltaY
-                        availableDown -= viewNormalizedDeltaY
-                        normalizedTranslationY = -(1f - availableUp)
-                    }
-                }
-
-                if ((normalizedTranslationX != lastNormalizedTranslationX) || normalizedTranslationY != lastNormalizedTranslationY) {
-
-                    lastNormalizedTranslationX = normalizedTranslationX
-                    lastNormalizedTranslationY = normalizedTranslationY
-
-                    Slidanet.rendererHandler.post {
-
-                        if (Slidanet.followerTakeInProgress) {
-
-                            Slidanet.slidanetViews[Slidanet.editorContentAddress]?.let {followerObject ->
-
-                                followerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                followerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                followerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                followerObject.setDisplayNeedsUpdate(true)
-                            }
-
-                        } else if (Slidanet.ownerEditingInProgress) {
-
-                            Slidanet.rendererHandler.post {
-
-                                Slidanet.contentInEditor?.let { ownerObject ->
-
-                                    ownerObject.setNormalizedTranslationX(normalizedTranslationX)
-                                    ownerObject.setNormalizedTranslationY(normalizedTranslationY)
-                                    ownerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                    ownerObject.setDisplayNeedsUpdate(true)
-
-                                    if (ownerObject.getUpdateDuringEdit()) {
-
-                                        Slidanet.slidanetViews[ownerObject.getContentAddress()]?.let { subjectContentAddress ->
-
-                                            ownerObject.incrementMoveCount()
-
-                                            subjectContentAddress.setNormalizedTranslationX(normalizedTranslationX)
-                                            subjectContentAddress.setNormalizedTranslationY(normalizedTranslationY)
-                                            subjectContentAddress.initializeVertices(normalizedTranslationX, normalizedTranslationY)
-                                            subjectContentAddress.setDisplayNeedsUpdate(true)
-                                            subjectContentAddress.incrementMoveCount()
-                                            subjectContentAddress.distributeMove()
-                                        }
-                                    } else {
-                                        ownerObject.setMoveCount(1)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-        } catch (e: IllegalArgumentException) {
-
-        }
-    }
-*/
     private fun processGeneralMove() {
 
         try {
@@ -783,8 +254,8 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                 val a = w / h
 
-                val scaleDeltaX = 1f//w * a
-                val scaleDeltaY = 1f//w / a
+                val scaleDeltaX = 1f
+                val scaleDeltaY = 1f
 
                 if (lastTouchPosition.x == 0 && lastTouchPosition.y == 0) {
 
@@ -830,9 +301,11 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                         Slidanet.slidanetContentAddresses[Slidanet.editorContentAddress]?.let {followerObject ->
 
-                            followerObject.setNormalizedTranslationX(normalizedTranslationX)
-                            followerObject.setNormalizedTranslationY(normalizedTranslationY)
-                            followerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
+                            followerObject.setShareTranslationParameters(x = normalizedTranslationX,
+                                                                         y = normalizedTranslationY,
+                                                                         z = 1f)
+                            followerObject.initializeVertices(normalizedTranslationX =  normalizedTranslationX,
+                                                              normalizedTranslationY =  normalizedTranslationY)
                             followerObject.setDisplayNeedsUpdate(true)
                         }
 
@@ -840,9 +313,11 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                         Slidanet.contentInEditor?.let { ownerObject ->
 
-                            ownerObject.setNormalizedTranslationX(normalizedTranslationX)
-                            ownerObject.setNormalizedTranslationY(normalizedTranslationY)
-                            ownerObject.initializeVertices(normalizedTranslationX, normalizedTranslationY)
+                            ownerObject.setShareTranslationParameters(x = normalizedTranslationX,
+                                                                      y = normalizedTranslationY,
+                                                                      z = 1f)
+                            ownerObject.initializeVertices(normalizedTranslationX =  normalizedTranslationX,
+                                                            normalizedTranslationY = normalizedTranslationY)
                             ownerObject.setDisplayNeedsUpdate(true)
 
                             if (ownerObject.getUpdateDuringEdit()) {
@@ -850,9 +325,11 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                                 ownerObject.incrementMoveCount()
                                 Slidanet.slidanetContentAddresses[ownerObject.getContentAddress()]?.let { subjectContentAddress ->
 
-                                    subjectContentAddress.setNormalizedTranslationX(normalizedTranslationX)
-                                    subjectContentAddress.setNormalizedTranslationY(normalizedTranslationY)
-                                    subjectContentAddress.initializeVertices(normalizedTranslationX, normalizedTranslationY)
+                                    subjectContentAddress.setShareTranslationParameters(x = normalizedTranslationX,
+                                                                                        y = normalizedTranslationY,
+                                                                                        z = 1f)
+                                    subjectContentAddress.initializeVertices(normalizedTranslationX =  normalizedTranslationX,
+                                                                             normalizedTranslationY =  normalizedTranslationY)
                                     subjectContentAddress.setDisplayNeedsUpdate(true)
                                     subjectContentAddress.incrementMoveCount()
                                     subjectContentAddress.distributeMove()
@@ -924,81 +401,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     if (boxBeginY > 1f - boxHeight) boxBeginY = 1f - boxHeight
                     boxEndY = boxBeginY + boxHeight
 
-                    /*
-                    if (viewNormalizedDeltaX > 0f) {
-
-                        if (availableRight <= viewNormalizedDeltaX.absoluteValue) {
-
-                            availableLeft = 1f - boxWidth
-                            availableRight = 0f
-                            boxBeginX = availableLeft
-                            boxEndX = 1f
-
-                        } else if (availableRight > viewNormalizedDeltaX.absoluteValue) {
-
-                            availableRight -= viewNormalizedDeltaX
-                            availableLeft += viewNormalizedDeltaX
-                            boxBeginX = availableLeft
-                            boxEndX = boxBeginX + boxWidth
-
-                        }
-
-                    } else if (viewNormalizedDeltaX < 0f) {
-
-                        if (availableLeft <= viewNormalizedDeltaX.absoluteValue) {
-
-                            availableLeft = 0f
-                            availableRight = 1f - boxWidth
-                            boxBeginX = 0f
-                            boxEndX = boxWidth
-
-                        } else if (availableLeft > viewNormalizedDeltaX.absoluteValue) {
-
-                            availableRight -= viewNormalizedDeltaX
-                            availableLeft += viewNormalizedDeltaX
-                            boxBeginX = availableLeft
-                            boxEndX = boxBeginX + boxWidth
-                        }
-                    }
-
-                    if (viewNormalizedDeltaY > 0f) {
-
-                        if (availableDown <= viewNormalizedDeltaY.absoluteValue) {
-
-                            availableUp = 1f - boxHeight
-                            availableDown = 0f
-                            boxBeginY = 0f
-                            boxEndY = boxHeight
-
-                        } else if (availableDown > viewNormalizedDeltaY.absoluteValue) {
-
-                            availableDown -= viewNormalizedDeltaY
-                            availableUp += viewNormalizedDeltaY
-                            boxBeginY = availableDown
-                            boxEndY = boxBeginY + boxHeight
-
-                        }
-
-                    } else if (viewNormalizedDeltaY < 0f) {
-
-                        if (availableUp <= viewNormalizedDeltaY.absoluteValue) {
-
-                            availableUp = 0f
-                            availableDown = 1f - boxHeight
-                            boxBeginY = availableDown
-                            boxEndY = 1f
-
-                        } else if (availableUp > viewNormalizedDeltaY.absoluteValue) {
-
-                            availableUp += viewNormalizedDeltaY
-                            availableDown -= viewNormalizedDeltaY
-                            boxBeginY = availableDown
-                            boxEndY = boxBeginY + boxHeight
-
-                        }
-                    }
-                    */
-
                     if (boxBeginX != lastBoxBeginX || boxBeginY != lastBoxBeginY) {
 
                         lastBoxBeginX = boxBeginX
@@ -1008,20 +410,20 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                             Slidanet.slidanetContentAddresses[Slidanet.editorContentAddress]?.let { followerObject ->
 
-                                followerObject.setBoxBeginX(boxBeginX)
-                                followerObject.setBoxBeginY(boxBeginY)
-                                followerObject.setBoxEndX(boxEndX)
-                                followerObject.setBoxEndY(boxEndY)
+                                followerObject.setShareBoxParameters(beginX = boxBeginX,
+                                                                     beginY = boxBeginY,
+                                                                     endX = boxEndX,
+                                                                     endY = boxEndY)
                                 followerObject.setDisplayNeedsUpdate(true)
 
                             }
 
                         } else if (Slidanet.ownerEditingInProgress) {
 
-                            it.setBoxBeginX(boxBeginX)
-                            it.setBoxBeginY(boxBeginY)
-                            it.setBoxEndX(boxEndX)
-                            it.setBoxEndY(boxEndY)
+                            it.setShareBoxParameters(beginX = boxBeginX,
+                                                     beginY = boxBeginY,
+                                                     endX = boxEndX,
+                                                     endY = boxEndY)
                             it.setDisplayNeedsUpdate(true)
 
                             if (it.getUpdateDuringEdit()) {
@@ -1030,10 +432,10 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                                 Slidanet.slidanetContentAddresses[it.getContentAddress()]?.let { ownerObject ->
 
-                                    ownerObject.setBoxBeginX(boxBeginX)
-                                    ownerObject.setBoxBeginY(boxBeginY)
-                                    ownerObject.setBoxEndX(boxEndX)
-                                    ownerObject.setBoxEndY(boxEndY)
+                                    ownerObject.setShareBoxParameters(beginX = boxBeginX,
+                                                                      beginY = boxBeginY,
+                                                                      endX = boxEndX,
+                                                                      endY = boxEndY)
                                     ownerObject.setDisplayNeedsUpdate(true)
                                     ownerObject.incrementMoveCount()
                                     ownerObject.distributeMove()
@@ -1052,13 +454,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
     }
 
     private fun processDefinePeek() {
-
-        /*
-        if ((boxStartPosition.x == boxEndPosition.x || boxStartPosition.y == boxEndPosition.y) && (boxStartPosition.x != 0)) {
-            return
-        }
-
-         */
 
         calculateBox()
         generateMaskBox()
@@ -1166,24 +561,20 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                     endY = subjectDiagonal.y
                 }
 
-                val normalizedBoxBeginX =
-                    (startX - subjectOrigin.x).toFloat() / subjectFrame.x.toFloat()
-                val normalizedBoxBeginY =
-                    (startY - subjectOrigin.y).toFloat() / subjectFrame.y.toFloat()
-                val normalizedBoxEndX =
-                    (endX - subjectOrigin.x).toFloat() / subjectFrame.x.toFloat()
-                val normalizedBoxEndY =
-                    (endY - subjectOrigin.y).toFloat() / subjectFrame.y.toFloat()
+                val normalizedBoxBeginX = (startX - subjectOrigin.x).toFloat() / subjectFrame.x.toFloat()
+                val normalizedBoxBeginY = (startY - subjectOrigin.y).toFloat() / subjectFrame.y.toFloat()
+                val normalizedBoxEndX = (endX - subjectOrigin.x).toFloat() / subjectFrame.x.toFloat()
+                val normalizedBoxEndY = (endY - subjectOrigin.y).toFloat() / subjectFrame.y.toFloat()
 
 
                 if (Slidanet.followerTakeInProgress) {
 
                     Slidanet.slidanetContentAddresses[Slidanet.editorContentAddress]?.let { followerObject ->
 
-                        followerObject.setBoxBeginX(normalizedBoxBeginX)
-                        followerObject.setBoxBeginY(normalizedBoxBeginY)
-                        followerObject.setBoxEndX(normalizedBoxEndX)
-                        followerObject.setBoxEndY(normalizedBoxEndY)
+                        followerObject.setShareBoxParameters(beginX = normalizedBoxBeginX,
+                                                             beginY = normalizedBoxBeginY,
+                                                             endX = normalizedBoxEndX,
+                                                             endY = normalizedBoxEndY)
                         followerObject.setDisplayNeedsUpdate(true)
 
                     }
@@ -1192,10 +583,10 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                     Slidanet.contentInEditor?.let {
 
-                        editorView.setBoxBeginX(normalizedBoxBeginX)
-                        editorView.setBoxBeginY(normalizedBoxBeginY)
-                        editorView.setBoxEndX(normalizedBoxBeginX)
-                        editorView.setBoxEndY(normalizedBoxBeginY)
+                        editorView.setShareBoxParameters(beginX = normalizedBoxBeginX,
+                                                         beginY = normalizedBoxBeginY,
+                                                         endX = normalizedBoxEndX,
+                                                         endY = normalizedBoxEndY)
                         editorView.setDisplayNeedsUpdate(true)
                         editorView.initializeBoxDimensions(normalizedBoxBeginX, normalizedBoxBeginY, normalizedBoxEndX, normalizedBoxEndY)
 
@@ -1205,10 +596,10 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
 
                             Slidanet.slidanetContentAddresses[editorView.getContentAddress()]?.let { ownerObject ->
 
-                                ownerObject.setBoxBeginX(normalizedBoxBeginX)
-                                ownerObject.setBoxBeginY(normalizedBoxBeginY)
-                                ownerObject.setBoxEndX(normalizedBoxEndX)
-                                ownerObject.setBoxEndY(normalizedBoxEndY)
+                                ownerObject.setShareBoxParameters(beginX = normalizedBoxBeginX,
+                                                                  beginY = normalizedBoxBeginY,
+                                                                  endX = normalizedBoxEndX,
+                                                                  endY = normalizedBoxEndY)
                                 ownerObject.setDisplayNeedsUpdate(true)
                                 ownerObject.incrementMoveCount()
                                 ownerObject.distributeMove()
@@ -1219,30 +610,6 @@ class SlidanetContentControl(val applicationContext: Context) : ConstraintLayout
                         }
                     }
                 }
-
-
-/*
-                    editorView.initializeBoxDimensions(normalizedBoxBeginX, normalizedBoxBeginY, normalizedBoxEndX, normalizedBoxEndY)
-                editorView.setDisplayNeedsUpdate(true)
-
-                if (editorView.getUpdateDuringEdit()) {
-
-                    editorView.incrementMoveCount()
-                    Slidanet.slidanetContentAddresses[editorView.getEditorContentAddress()]?.let { subjectView ->
-
-                        subjectView.setBoxBeginX(normalizedBoxBeginX)
-                        subjectView.setBoxBeginY(normalizedBoxBeginY)
-                        subjectView.setBoxEndX(normalizedBoxEndX)
-                        subjectView.setBoxEndY(normalizedBoxEndY)
-                        subjectView.incrementMoveCount()
-                        subjectView.distributeMove()
-                    }
-                } else {
-                        editorView.setMoveCount(1)
-                }
-            }
-
- */
             }
         }
     }

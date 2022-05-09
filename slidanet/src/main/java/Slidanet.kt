@@ -24,7 +24,6 @@ import java.io.InputStream
 import java.util.*
 import kotlin.math.absoluteValue
 
-
 object Slidanet {
 
     internal val requests = mutableMapOf<Int, SlidanetResponseData>()
@@ -47,6 +46,13 @@ object Slidanet {
     internal var sendMessageHandler: Handler
     internal var server = SlidanetServer()
     internal var contentInEditor: SlidanetObject? = null
+    internal var editorContent: SlidanetEditorContent? = null
+    internal var editorControl: SlidanetContentControl? = null
+    internal var relativeLayout: RelativeLayout? = null
+    internal var editorContentAddress = ""
+    internal var editingState: SlidanetEditingStateType = SlidanetEditingStateType.InActive
+    internal var followerTakeInProgress = false
+    internal var ownerEditingInProgress = false
     internal lateinit var slidaName: String
     internal lateinit var applicationName: String
     internal lateinit var applicationPassword: String
@@ -54,16 +60,9 @@ object Slidanet {
     private lateinit var contentResolver: ContentResolver
     internal lateinit var renderer: SlidanetRenderer
     internal lateinit var applicationContext: Context
-    internal var editorContent: SlidanetEditorContent? = null
-    internal var editorControl: SlidanetContentControl? = null
-    internal var relativeLayout: RelativeLayout? = null
-    internal lateinit var referenceView: SlidanetImage
     private lateinit var border: SlidanetBorder
-    internal var editingContent = false
-    internal var editorContentAddress = ""
-    internal var editingState: SlidanetEditingStateType = SlidanetEditingStateType.InActive
-    internal var followerTakeInProgress = false
-    internal var ownerEditingInProgress = false
+    internal lateinit var referenceView: SlidanetImage
+    private var connectivityReceiver: SlidanetConnectivityChangeReceiver? = null
 
     init {
 
@@ -114,6 +113,11 @@ object Slidanet {
                 this.screenDensity = screenDensity
                 this.applicationContext = applicationContext
 
+                if (connectivityReceiver == null) {
+
+                    connectivityReceiver = SlidanetConnectivityChangeReceiver()
+                }
+
                 if (editorContent == null) {
 
                     contentInEditor = SlidanetContentAddress(contentAddress = "ABC",
@@ -121,9 +125,6 @@ object Slidanet {
                                                              editorEnabled = true)
                     referenceView = SlidanetImage(applicationContext)
                     referenceView.id = View.generateViewId()
-                    border = SlidanetBorder(Constants.defaultBorderColor, Constants.defaultBorderWidth)
-                    border.setDottedLine()
-                    referenceView.background = border
 
                     editorContent = SlidanetEditorContent(applicationContext)
                     editorContent!!.id = View.generateViewId()
@@ -131,11 +132,6 @@ object Slidanet {
                     relativeLayout?.id = View.generateViewId()
                     relativeLayout?.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
                                                                                RelativeLayout.LayoutParams.MATCH_PARENT )
-                    val border = GradientDrawable()
-                    border.setColor(Color.argb(0,1,1,1))
-                    border.setStroke(2, -0x1000000) //black border with full opacity
-                    referenceView.background  = border
-
                 }
 
                 if (editorControl == null) {
@@ -156,9 +152,9 @@ object Slidanet {
                 request.put(SlidanetConstants.slidanet_application_password, applicationPassword)
                 request.put(SlidanetConstants.slidanet_name, slidaName)
                 requestId++
-                requests[requestId] = SlidanetResponseData(SlidanetRequestType.Connect,
-                                                           request,
-                                                           SlidanetResponseType.Undefined)
+                requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.Connect,
+                                                           requestInfo = request,
+                                                           responseCode = SlidanetResponseType.Undefined)
 
                 if (!rendererInitialized) {
 
@@ -193,9 +189,9 @@ object Slidanet {
             val request = JSONObject()
             request.put(SlidanetConstants.slidanet_name, slidaName)
             requestId++
-            requests[requestId] = SlidanetResponseData(SlidanetRequestType.Disconnect,
-                                                       request,
-                                                       SlidanetResponseType.Undefined)
+            requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.Disconnect,
+                                                       requestInfo = request,
+                                                       responseCode =  SlidanetResponseType.Undefined)
             server.disconnectFromNetwork(requestId = requestId)
 
         } else {
@@ -209,10 +205,10 @@ object Slidanet {
     fun connectContent(slidanetContentAddress: String,
                        appContentPath: String = "",
                        videoStartTime: Float = 0f,
-                       updateDuringEditing: Boolean = false,
-                       ) : SlidanetResponseType {
+                       updateDuringEditing: Boolean = false) : SlidanetResponseType {
 
         try {
+
             if (isConnected()) {
 
                 slidanetContentAddresses[slidanetContentAddress]?.let {
@@ -332,9 +328,6 @@ object Slidanet {
 
         } catch (e: Exception) {
 
-            val text1 = e.message
-            val text2 = e.localizedMessage
-            val text3 = e.cause
             handleInternalError()
         }
 
@@ -480,11 +473,6 @@ object Slidanet {
                     SlidanetSharingStyleType.SlideUpAndDown,
                     SlidanetSharingStyleType.SlideAllDirections -> {
 
-                        if (it.getShareMode() == slidanetSharingStyle) {
-
-                            return SlidanetResponseType.AlreadyInSlideMode
-                        }
-
                         if (x.absoluteValue > 1f || y.absoluteValue > 1f) return SlidanetResponseType.InvalidSlideParameters
 
                         val request = JSONObject()
@@ -497,6 +485,8 @@ object Slidanet {
                                                                    sharingStyle = slidanetSharingStyle)
 
                         rendererHandler.post {
+
+                            contentInEditor?.setShareMode(slidanetSharingStyle)
 
                             it.setShareMode(slidanetSharingStyle)
                             it.setShareTranslationParameters(x, y, 1f)
@@ -566,6 +556,8 @@ object Slidanet {
                                                 boxEndY = boxEndY)
 
                     }
+
+                    else -> {}
                 }
             } ?: kotlin.run {
 
@@ -623,9 +615,9 @@ object Slidanet {
             val request = JSONObject()
             request.put(SlidanetConstants.slidanet_name, slidaName)
             requestId++
-            requests[requestId] = SlidanetResponseData(SlidanetRequestType.DisconnectAllContent,
-                                                       request,
-                                                       SlidanetResponseType.Undefined)
+            requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.DisconnectAllContent,
+                                                       requestInfo = request,
+                                                       responseCode = SlidanetResponseType.Undefined)
 
             server.disconnectAllContent(requestId = requestId)
 
@@ -692,9 +684,9 @@ object Slidanet {
                     val request = JSONObject()
                     request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                     requestId++
-                    requests[requestId] = SlidanetResponseData(SlidanetRequestType.HideContent,
-                                                               request,
-                                                               SlidanetResponseType.Undefined)
+                    requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.HideContent,
+                                                               requestInfo = request,
+                                                               responseCode = SlidanetResponseType.Undefined)
 
                     server.setHideState(requestId = requestId,
                                         contentAddress = slidanetContentAddress,
@@ -729,9 +721,9 @@ object Slidanet {
                     val request = JSONObject()
                     request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                     requestId++
-                    requests[requestId] = SlidanetResponseData(SlidanetRequestType.UnhideContent,
-                                                               request,
-                                                               SlidanetResponseType.Undefined)
+                    requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.UnhideContent,
+                                                               requestInfo = request,
+                                                               responseCode = SlidanetResponseType.Undefined)
                     server.setHideState(requestId = requestId,
                                         contentAddress = slidanetContentAddress,
                                         state = false)
@@ -826,9 +818,9 @@ object Slidanet {
                 val request = JSONObject()
                 request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                 requestId++
-                requests[requestId] = SlidanetResponseData(SlidanetRequestType.SetContentVisibilityPreference,
-                                                           request,
-                                                           SlidanetResponseType.Undefined)
+                requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.SetContentVisibilityPreference,
+                                                           requestInfo = request,
+                                                           responseCode = SlidanetResponseType.Undefined)
                 server.setVisibilityPreference(requestId = requestId,
                                                contentAddress = slidanetContentAddress,
                                                preference = visibilityPreference.ordinal)
@@ -896,9 +888,9 @@ object Slidanet {
                         val request = JSONObject()
                         request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                         requestId++
-                        requests[requestId] = SlidanetResponseData(SlidanetRequestType.TakeContent,
-                                                                   request,
-                                                                   SlidanetResponseType.Undefined)
+                        requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.TakeContent,
+                                                                   requestInfo = request,
+                                                                   responseCode = SlidanetResponseType.Undefined)
 
                         it.setGiveEnabled(false)
                         server.takeContentAddress(requestId = requestId,
@@ -938,9 +930,9 @@ object Slidanet {
                     it.getVideoPlayer().pause()
                     val request = JSONObject()
                     request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
-                    val response = SlidanetResponseData(SlidanetRequestType.PauseContent,
-                                                               request,
-                                                               SlidanetResponseType.Undefined)
+                    val response = SlidanetResponseData(requestCode = SlidanetRequestType.PauseContent,
+                                                        requestInfo = request,
+                                                        responseCode = SlidanetResponseType.Undefined)
                     mainHandler?.post { slidanetResponseHandler.slidanetResponse(response) }
 
 
@@ -974,9 +966,9 @@ object Slidanet {
                     it.getVideoPlayer().play()
                     val request = JSONObject()
                     request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
-                    val response = SlidanetResponseData(SlidanetRequestType.PlayContent,
-                                                        request,
-                                                        SlidanetResponseType.Undefined)
+                    val response = SlidanetResponseData(requestCode = SlidanetRequestType.PlayContent,
+                                                        requestInfo = request,
+                                                        responseCode = SlidanetResponseType.Undefined)
                     mainHandler?.post { slidanetResponseHandler.slidanetResponse(response) }
 
                 } else {
@@ -1011,9 +1003,9 @@ object Slidanet {
                     request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
                     request.put(SlidanetConstants.slidanet_content_filter, slidanetContentFilter.ordinal)
                     requestId++
-                    requests[requestId] = SlidanetResponseData(SlidanetRequestType.SetContentFilter,
-                                                               request,
-                                                               SlidanetResponseType.Undefined)
+                    requests[requestId] = SlidanetResponseData(requestCode = SlidanetRequestType.SetContentFilter,
+                                                               requestInfo = request,
+                                                               responseCode = SlidanetResponseType.Undefined)
                     server.setContentFilter(requestId = requestId,
                                             contentAddress = slidanetContentAddress,
                                             filter =  slidanetContentFilter.ordinal )
@@ -1145,7 +1137,11 @@ object Slidanet {
                         requests.clear()
                         removeSlidanetContentAddresses()
                         connectedToSlidanet = false
-                        rendererHandler.post { renderer.setRenderingState(false) }
+
+                        rendererHandler.post {
+
+                            renderer.setRenderingState(false)
+                        }
 
                     } else {
 
@@ -1155,17 +1151,23 @@ object Slidanet {
             }
         } catch (e: IllegalArgumentException) {
 
-            requests.clear()
-            removeSlidanetContentAddresses()
             connectedToSlidanet = false
-            rendererHandler.post { renderer.setRenderingState(false) }
-            val request = JSONObject()
-            request.put(SlidanetConstants.slidanet_name, slidaName)
 
-            SlidanetResponseData(SlidanetRequestType.Disconnect,
-                                 request,
-                                 SlidanetResponseType.Undefined)
+            clearData()
         }
+    }
+
+    internal fun clearData() {
+
+        requests.clear()
+        removeSlidanetContentAddresses()
+        rendererHandler.post { renderer.setRenderingState(false) }
+        val request = JSONObject()
+        request.put(SlidanetConstants.slidanet_name, slidaName)
+
+        SlidanetResponseData(requestCode = SlidanetRequestType.Disconnect,
+                             requestInfo = request,
+                             responseCode = SlidanetResponseType.Undefined)
     }
 
     private fun processConnectContentResponse(message:ByteArray) {
@@ -1603,9 +1605,9 @@ object Slidanet {
 
                     val request = JSONObject()
                     request.put(SlidanetConstants.slidanet_content_address, it.getContentAddress())
-                    val response = SlidanetResponseData(SlidanetRequestType.SlidanetUpdate,
-                                                        request,
-                                                        SlidanetResponseType.ContentGiven)
+                    val response = SlidanetResponseData(requestCode = SlidanetRequestType.SlidanetUpdate,
+                                                        requestInfo = request,
+                                                        responseCode = SlidanetResponseType.ContentGiven)
                     mainHandler?.post { slidanetResponseHandler.slidanetResponse(response) }
                 }
             }
@@ -1626,13 +1628,14 @@ object Slidanet {
                 val contentAddress = requireNotNull(this.getString(contentAddressLength))
 
                 slidanetContentAddresses[contentAddress]?.let {
+
                     it.setGiveEnabled(false)
 
                     val request = JSONObject()
                     request.put(SlidanetConstants.slidanet_content_address, it.getContentAddress())
-                    val response = SlidanetResponseData(SlidanetRequestType.SlidanetUpdate,
-                                                        request,
-                                                        SlidanetResponseType.ContentTaken)
+                    val response = SlidanetResponseData(requestCode = SlidanetRequestType.SlidanetUpdate,
+                                                        requestInfo = request,
+                                                        responseCode = SlidanetResponseType.ContentTaken)
                     mainHandler?.post { slidanetResponseHandler.slidanetResponse(response) }
                 }
             }
@@ -1728,14 +1731,20 @@ object Slidanet {
 
                                             rendererHandler.post {
 
-                                                contentEditor.setShareTranslationParameters(x,y,z)
-                                                contentEditor.initializeVertices(x,y)
+                                                contentEditor.setShareTranslationParameters(x = x,
+                                                                                            y = y,
+                                                                                            z = z)
+                                                contentEditor.initializeVertices(normalizedTranslationX = x,
+                                                                                 normalizedTranslationY = y)
 
                                                 if (it.getUpdateDuringEdit()) {
 
-                                                    it.setShareTranslationParameters(x,y,z)
-                                                    it.initializeVertices(x,y)
-                                                    it.setDisplayNeedsUpdate(true)
+                                                    it.setShareTranslationParameters(x = x,
+                                                                                     y = y,
+                                                                                     z = z)
+                                                    it.initializeVertices(normalizedTranslationX = x,
+                                                                          normalizedTranslationY = y)
+                                                    it.setDisplayNeedsUpdate( state = true)
                                                 }
                                             }
                                         }
@@ -1744,8 +1753,11 @@ object Slidanet {
 
                                         rendererHandler.post {
 
-                                            it.setShareTranslationParameters(x,y,z)
-                                            it.initializeVertices(x,y)
+                                            it.setShareTranslationParameters(x = x,
+                                                                             y = y,
+                                                                             z = z)
+                                            it.initializeVertices(normalizedTranslationX = x,
+                                                                  normalizedTranslationY = y)
                                             it.setDisplayNeedsUpdate(true)
                                         }
                                     }
@@ -1754,8 +1766,11 @@ object Slidanet {
 
                                     rendererHandler.post {
 
-                                        it.setShareTranslationParameters(x,y,z)
-                                        it.initializeVertices(x, y)
+                                        it.setShareTranslationParameters(x = x,
+                                                                         y = y,
+                                                                         z = z)
+                                        it.initializeVertices(normalizedTranslationX = x,
+                                                              normalizedTranslationY = y)
                                         it.setDisplayNeedsUpdate(true)
                                     }
                                 }
@@ -1784,11 +1799,17 @@ object Slidanet {
 
                                             rendererHandler.post {
 
-                                                contentEditor.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                                contentEditor.setShareBoxParameters(beginX = boxBeginX,
+                                                                                    beginY = boxBeginY,
+                                                                                    endX = boxEndX,
+                                                                                    endY = boxEndY)
 
                                                 if (it.getUpdateDuringEdit()) {
 
-                                                    it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                                    it.setShareBoxParameters(beginX = boxBeginX,
+                                                                             beginY = boxBeginY,
+                                                                             endX = boxEndX,
+                                                                             endY = boxEndY)
                                                     it.setDisplayNeedsUpdate(true)
                                                 }
                                             }
@@ -1798,7 +1819,10 @@ object Slidanet {
 
                                         rendererHandler.post {
 
-                                            it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                            it.setShareBoxParameters(beginX = boxBeginX,
+                                                                     beginY = boxBeginY,
+                                                                     endX = boxEndX,
+                                                                     endY = boxEndY)
                                             it.setDisplayNeedsUpdate(true)
                                         }
                                     }
@@ -1806,7 +1830,10 @@ object Slidanet {
 
                                     rendererHandler.post {
 
-                                        it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                        it.setShareBoxParameters(beginX = boxBeginX,
+                                                                 beginY = boxBeginY,
+                                                                 endX = boxEndX,
+                                                                 endY = boxEndY)
                                         it.setDisplayNeedsUpdate(true)
                                     }
                                 }
@@ -1905,15 +1932,19 @@ object Slidanet {
 
                                             rendererHandler.post {
 
-                                                contentEditor.setShareTranslationParameters(x, y, z)
-                                                contentEditor.initializeVertices(x, y)
+                                                contentEditor.setShareTranslationParameters(x = x,
+                                                                                            y = y,
+                                                                                            z = z)
+                                                contentEditor.initializeVertices(normalizedTranslationX =  x, normalizedTranslationY = y)
+                                                contentEditor.setShareBoxParameters(beginX = 0f, beginY = 0f, endX = 0f, endY = 0f)
                                                 contentEditor.setPeekEnabled(false)
                                                 contentEditor.setDisplayNeedsUpdate(true)
 
                                                 if (it.getUpdateDuringEdit()) {
 
-                                                    it.setShareTranslationParameters(x,y, z)
-                                                    it.initializeVertices(x, y)
+                                                    it.setShareTranslationParameters(x = x,y = y, z = z)
+                                                    it.initializeVertices(normalizedTranslationX = x, normalizedTranslationY = y)
+                                                    it.setShareBoxParameters(beginX = 0f, beginY = 0f, endX = 0f, endY = 0f)
                                                     it.setPeekEnabled(false)
                                                     it.setDisplayNeedsUpdate(true)
 
@@ -1925,8 +1956,9 @@ object Slidanet {
 
                                         rendererHandler.post {
 
-                                            it.setShareTranslationParameters(x, y, z)
-                                            it.initializeVertices(x, y)
+                                            it.setShareTranslationParameters(x = x, y = y, z = z)
+                                            it.initializeVertices(normalizedTranslationX = x, normalizedTranslationY = y)
+                                            it.setShareBoxParameters(beginX = 0f, beginY = 0f, endX = 0f, endY = 0f)
                                             it.setPeekEnabled(false)
                                             it.setDisplayNeedsUpdate(true)
 
@@ -1937,8 +1969,9 @@ object Slidanet {
 
                                     rendererHandler.post {
 
-                                        it.setShareTranslationParameters(x, y, z)
-                                        it.initializeVertices(x, y)
+                                        it.setShareTranslationParameters(x =x, y = y, z = z)
+                                        it.initializeVertices(normalizedTranslationX = x, normalizedTranslationY = y)
+                                        it.setShareBoxParameters(beginX = 0f, beginY = 0f, endX = 0f, endY = 0f)
                                         it.setPeekEnabled(false)
                                         it.setDisplayNeedsUpdate(true)
 
@@ -1969,15 +2002,19 @@ object Slidanet {
 
                                             rendererHandler.post {
 
-                                                contentEditor.setShareTranslationParameters(0f,0f,1f)
-                                                contentEditor.initializeVertices(0f,0f)
-                                                contentEditor.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                                contentEditor.setShareTranslationParameters(x = 0f,y = 0f,z = 1f)
+                                                contentEditor.initializeVertices(normalizedTranslationX = 0f, normalizedTranslationY = 0f)
+                                                contentEditor.setShareBoxParameters(beginX = boxBeginX,
+                                                                                    beginY = boxBeginY,
+                                                                                    endX = boxEndX,
+                                                                                    endY = boxEndY)
                                                 contentEditor.setDisplayNeedsUpdate(true)
 
                                                 if (it.getUpdateDuringEdit()) {
 
-                                                    it.initializeVertices(0f,0f)
-                                                    it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                                    contentEditor.setShareTranslationParameters(x = 0f,y = 0f,z = 1f)
+                                                    it.initializeVertices(normalizedTranslationX = 0f, normalizedTranslationY = 0f)
+                                                    it.setShareBoxParameters(beginX = boxBeginX, beginY = boxBeginY, endX = boxEndX, endY = boxEndY)
                                                     it.setDisplayNeedsUpdate(true)
 
                                                 }
@@ -1988,9 +2025,9 @@ object Slidanet {
 
                                         rendererHandler.post {
 
-                                            it.setShareTranslationParameters(0f,0f,1f)
-                                            it.initializeVertices(0f,0f)
-                                            it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                            it.setShareTranslationParameters(x = 0f,y = 0f,z = 1f)
+                                            it.initializeVertices(normalizedTranslationX = 0f, normalizedTranslationY = 0f)
+                                            it.setShareBoxParameters(beginX = boxBeginX, beginY = boxBeginY, endX = boxEndX, endY = boxEndY)
                                             it.setDisplayNeedsUpdate(true)
 
                                         }
@@ -1999,9 +2036,9 @@ object Slidanet {
 
                                     rendererHandler.post {
 
-                                        it.setShareTranslationParameters(0f,0f,1f)
-                                        it.initializeVertices(0f,0f)
-                                        it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
+                                        it.setShareTranslationParameters(x = 0f,y = 0f,z = 1f)
+                                        it.initializeVertices(normalizedTranslationX = 0f, normalizedTranslationY = 0f)
+                                        it.setShareBoxParameters(beginX = boxBeginX, beginY = boxBeginY, endX = boxEndX, endY = boxEndY)
                                         it.setDisplayNeedsUpdate(true)
 
                                     }
@@ -2027,13 +2064,7 @@ object Slidanet {
 
             SlidanetMessage(message).apply {
 
-
                 val requestId = requireNotNull(this.getInteger(Constants.integerWidth))
-
-                if (requestId < 0 || requestId >= requests.size) {
-
-                    throw IllegalArgumentException("")
-                }
 
                 requireNotNull(this.getInteger(Constants.shortWidth)).let { rc_it ->
 

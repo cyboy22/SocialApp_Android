@@ -155,7 +155,7 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         slideUpAndDownButton.transformationMethod = null
         slideUpAndDownButton.background = null
         slideUpAndDownButton.id = View.generateViewId()
-        slideUpAndDownButton.setText(R.string.slideLeftAndRightButtonText)
+        slideUpAndDownButton.setText(R.string.slideUpAndDownButtonText)
         slideUpAndDownButton.setTextColor(Color.WHITE)
 
         slideAllDirectionsButton = Button(this)
@@ -166,31 +166,6 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
         slideAllDirectionsButton.setText(R.string.slideAllDirectionsButtonText)
         slideAllDirectionsButton.setTextColor(Color.WHITE)
 
-        /*
-        peekOptionsLayout.layoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
-                                                                       ConstraintLayout.LayoutParams.WRAP_CONTENT)
-        peekOptionsLayout.setBackgroundColor(Color.YELLOW)
-
-        val constraintSet = ConstraintSet()
-        constraintSet.clone(peekOptionsLayout)
-
-        peekDefineButton.layoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
-                                                                      ConstraintLayout.LayoutParams.WRAP_CONTENT)
-
-        peekSlideButton.layoutParams = ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT,
-                                                                     ConstraintLayout.LayoutParams.WRAP_CONTENT)
-
-        peekOptionsLayout.addView(peekDefineButton)
-        peekOptionsLayout.addView(peekSlideButton)
-
-        constraintSet.connect(peekDefineButton.id, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP)
-        constraintSet.connect(peekDefineButton.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
-
-        constraintSet.connect(peekSlideButton.id, ConstraintSet.TOP, peekDefineButton.id, ConstraintSet.BOTTOM)
-        constraintSet.connect(peekSlideButton.id, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT)
-
-        constraintSet.applyTo(peekOptionsLayout)
-*/
     }
 
     override fun onClick(p0: View?) {
@@ -207,6 +182,7 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
             cancelEditingButton -> cancelEditingButtonClicked()
             applyEditingButton -> applyEditingButtonClicked()
             slideLeftAndRightButton -> slideLeftAndRightButtonClicked()
+            slideUpAndDownButton -> slideUpAndDownButtonClicked()
             slideAllDirectionsButton -> slideAllDirectionsButtonClicked()
             else -> {}
 
@@ -245,22 +221,48 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
     private fun peekDefineButtonClicked() {
 
+        val response = Slidanet.setSharingStyle(slidanetContentAddress = SocialApp.slidanetEditContentAddress,
+                                                slidanetSharingStyle = SlidanetSharingStyleType.PeekDefine,
+                                                boxBeginX = 0f,
+                                                boxBeginY =  0f,
+                                                boxEndX = 0f,
+                                                boxEndY = 0f)
+
     }
 
     private fun peekSlideButtonClicked() {
 
+        val response = Slidanet.setSharingStyle(slidanetContentAddress = SocialApp.slidanetEditContentAddress,
+                                                slidanetSharingStyle = SlidanetSharingStyleType.PeekSlide,
+                                                boxBeginX = 0f,
+                                                boxBeginY =  0f,
+                                                boxEndX = 0f,
+                                                boxEndY = 0f)
     }
 
     private fun slideLeftAndRightButtonClicked() {
+
+        val response = Slidanet.setSharingStyle(slidanetContentAddress = SocialApp.slidanetEditContentAddress,
+                                                slidanetSharingStyle = SlidanetSharingStyleType.SlideLeftAndRight,
+                                                x = 1f,
+                                                y = 0f)
 
     }
 
     private fun slideUpAndDownButtonClicked() {
 
+        val response = Slidanet.setSharingStyle(slidanetContentAddress = SocialApp.slidanetEditContentAddress,
+                                                slidanetSharingStyle = SlidanetSharingStyleType.SlideUpAndDown,
+                                                x = 0f,
+                                                y = -1f)
     }
 
     private fun slideAllDirectionsButtonClicked() {
 
+        val response = Slidanet.setSharingStyle(slidanetContentAddress = SocialApp.slidanetEditContentAddress,
+                                                slidanetSharingStyle = SlidanetSharingStyleType.SlideAllDirections,
+                                                x = 1f,
+                                                y = 1f)
     }
 
     private fun cancelEditingButtonClicked() {
@@ -294,14 +296,11 @@ class OwnSlidanetContentActivity : AppCompatActivity(),
 
     override fun refreshContent() {
 
-        val check = ""
     }
 
     override fun addEditor(editorView: ConstraintLayout) {
 
         val contentView: ConstraintLayout = findViewById<ConstraintLayout>(R.id.slidanet_own_content)
-        val viewWidth = contentView.width
-        val viewHeight = contentView.height
         contentView.addView(editorView)
         initializeEditingButtons()
 

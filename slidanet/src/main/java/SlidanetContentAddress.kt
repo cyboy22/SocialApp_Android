@@ -2,6 +2,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.SurfaceTexture
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.opengl.*
 import android.os.Build
@@ -71,6 +72,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
     private var backgroundBlueColor = 1f
     private var backgroundGreenColor = 1f
     private var backgroundAlphaColor = 1f
+    private lateinit var relativeLayoutParameters: RelativeLayout.LayoutParams
 
     @Volatile private var giveEnabled = false
     @Volatile private var hideEnabled = false
@@ -363,10 +365,12 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
 
     override fun getDoubleTapEditingEnabled() : Boolean {
+
         return doubleTapEditingEnabled
     }
 
     override fun setDoubleTapEditingEnabled(editingState: Boolean) {
+
         doubleTapEditingEnabled = editingState
     }
 
@@ -494,22 +498,30 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     override fun onSurfaceTextureAvailable(p0: SurfaceTexture, p1: Int, p2: Int) {
 
-        Slidanet.rendererHandler.post { initializeSurfaceTexture(p0, p1, p2) }
+        sTexture = p0
+
+        Slidanet.rendererHandler.post {
+
+            textureWidth = p1
+            textureHeight = p2
+            windowSurface = Slidanet.renderer.createWindowSurface(sTexture)
+            initializeSurfaceTexture(p0, p1, p2) }
     }
 
     private fun initializeSurfaceTexture(surfaceTexture: SurfaceTexture, w: Int, h: Int) {
 
-        sTexture = surfaceTexture
-        textureWidth = w
-        textureHeight = h
-        windowSurface = Slidanet.renderer.createWindowSurface(sTexture)
+        //sTexture = surfaceTexture
+        //textureWidth = w
+        //textureHeight = h
+        //windowSurface = Slidanet.renderer.createWindowSurface(sTexture)
 
         if (textureId == 0) {
 
             createTexture()
+
         }
 
-        this.initializeVertices(normalizedTranslationX, normalizedTranslationY)
+        initializeVertices(normalizedTranslationX, normalizedTranslationY)
 
         if (contentType == SlidanetContentType.StaticVideo) {
 
@@ -537,7 +549,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             Constants.noRotation -> {
 
                 when (shareMode) {
-
 
                     SlidanetSharingStyleType.SlideLeftAndRight -> {
 
@@ -728,20 +739,15 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
     override fun onSurfaceTextureSizeChanged(p0: SurfaceTexture, p1: Int, p2: Int) {
 
-        val runnable = Runnable {
+        Slidanet.rendererHandler.post {
 
-            sTexture = p0
             textureWidth = p1
             textureHeight = p2
-
-            Slidanet.renderer.destroyWindowSurface(windowSurface)
-            deleteTextures()
-            Slidanet.renderer.destroyWindowSurface(windowSurface)
-
+            val editingScale = scale
+            initializeVertices(normalizedTranslationX, normalizedTranslationY)
             initializeSurfaceTexture(p0, p1, p2)
+            displayNeedsUpdate = true
         }
-
-        Slidanet.rendererHandler.post(runnable)
     }
 
     override fun deleteTextures() {
@@ -827,26 +833,29 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             }
         }
 
-        Slidanet.mainHandler?.post {
+        if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
 
-            initializeBackground()
+            Slidanet.mainHandler?.post {
 
-            when (contentType) {
+                initializeBackground()
 
-                SlidanetContentType.Image -> {
+                when (contentType) {
 
-                    initializeImage()
+                    SlidanetContentType.Image -> {
+
+                        initializeImage()
+                    }
+
+                    SlidanetContentType.StaticVideo -> {
+
+                        initializeVideo()
+                    }
+
+                    else -> { }
                 }
 
-                SlidanetContentType.StaticVideo -> {
-
-                    initializeVideo()
-                }
-
-                else -> { }
+                initializeTexture()
             }
-
-            initializeTexture()
         }
     }
 
@@ -933,12 +942,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         }
     }
 
-    fun initializeOwnerEditing(contentAddress: String,
-                               initiator: SlidanetEditingInitiatorType,
-                                editorView: ConstraintLayout) {
-
-    }
-
     private fun initializeEditorResponse(contentAddress: String,
                                          initiator: SlidanetEditingInitiatorType,
                                          editorView: ConstraintLayout) {
@@ -947,8 +950,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             val request = JSONObject()
             request.put(SlidanetConstants.slidanet_content_address, editorContentAddress)
-
-
 
             val response = SlidanetResponseData(requestCode = SlidanetRequestType.EditContent,
                                                 requestInfo = request,
@@ -975,13 +976,17 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             Slidanet.rendererHandler.post {
 
-                copyOwnerParametersToEditor(contentAddress)
+                if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
+
+                    copyOwnerParametersToEditor(contentAddress)
+
+                }
 
                 Slidanet.mainHandler?.post {
 
-                    initializeEditorLayoutParams()
+                    initializeEditorLayoutParams(initiator)
 
-                    initializeEditorResponse(contentAddress, initiator, editorView)
+                    //initializeEditorResponse(contentAddress, initiator, editorView)
 
                 }
             }
@@ -1014,9 +1019,9 @@ internal class SlidanetContentAddress(private val contentAddress: String,
         normalizedTranslationZ = z
     }
 
-    private fun initializeEditorLayoutParams() {
+    private fun initializeEditorLayoutParams(initiator: SlidanetEditingInitiatorType) {
 
-        val aspectRatio: Float = (textureWidth.toFloat()) / (textureHeight.toFloat())
+        val aspectRatio: Float = (bitmapWidth.toFloat()) / (bitmapHeight.toFloat())
 
         var nw = 0
         var nh = 0
@@ -1049,13 +1054,214 @@ internal class SlidanetContentAddress(private val contentAddress: String,
             else -> {}
         }
 
-        Slidanet.rendererHandler.post { scale = editingScale }
+        Slidanet.rendererHandler.post{
+
+            scale = editingScale
+            initializeVertices(translationX, translationY)
+
+            if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
+
+                Slidanet.mainHandler?.post {
+
+                    Slidanet.editorContent?.removeAllViews()
+                    Slidanet.relativeLayout?.removeAllViews()
+                }
+            }
+
+            val referenceWidth = (nw.toFloat() * Slidanet.screenDensity / editingScale).toInt()
+            val referenceHeight = (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()
+
+            when (shareMode) {
+
+                SlidanetSharingStyleType.SlideAllDirections,
+                SlidanetSharingStyleType.SlideLeftAndRight,
+                SlidanetSharingStyleType.PeekDefine,
+                SlidanetSharingStyleType.PeekSlide,
+                SlidanetSharingStyleType.SlideUpAndDown -> {
+
+                    Slidanet.editorContent?.let {
+
+                        RelativeLayout.LayoutParams(referenceWidth, referenceHeight).also {
+
+                            Slidanet.mainHandler?.post {
+
+                                it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                                Slidanet.referenceView.layoutParams = it
+                            }
+                        }
+                    }
+                }
+
+                else -> {}
+            }
+
+
+            this.backgroundAlphaColor = 1f
+
+            var contentEditorLayoutParams: RelativeLayout.LayoutParams = RelativeLayout.LayoutParams(referenceWidth, referenceHeight)
+
+            when (shareMode) {
+
+                SlidanetSharingStyleType.SlideLeftAndRight -> {
+
+                    Slidanet.mainHandler?.post {
+
+                        contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight).apply {
+
+                            this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                            //this.layoutParams = it
+                        }
+                    }
+                }
+
+                SlidanetSharingStyleType.SlideUpAndDown -> {
+
+                    Slidanet.mainHandler?.post {
+
+                        contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth, referenceHeight * 3).apply {
+
+                            this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                            //this.layoutParams = it
+                        }
+                    }
+                }
+
+                else -> {
+
+                    Slidanet.mainHandler?.post {
+
+                        contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight * 3).apply {
+
+                            this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                            //this.layoutParams = it
+                        }
+                    }
+                }
+            }
+
+            if (shareMode == SlidanetSharingStyleType.PeekSlide ||
+                shareMode == SlidanetSharingStyleType.PeekDefine) {
+
+                Slidanet.mainHandler?.post { Slidanet.referenceView.setBackgroundColor(Color.BLACK) }
+
+            } else {
+
+                Slidanet.mainHandler?.post {
+
+                    val border = GradientDrawable()
+                    border.setColor(Color.argb(0,1,1,1))
+                    border.setStroke(2, -0x1000000) //black border with full opacity
+                    Slidanet.referenceView.background  = border
+                }
+            }
+
+            if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
+
+                if (shareMode == SlidanetSharingStyleType.PeekSlide ||
+                    shareMode == SlidanetSharingStyleType.PeekDefine) {
+
+                        Slidanet.mainHandler?.post {
+
+                            Slidanet.relativeLayout?.addView(Slidanet.referenceView)
+
+                        }
+                }
+
+                Slidanet.mainHandler?.post {
+
+                    this.layoutParams = contentEditorLayoutParams
+                    Slidanet.relativeLayout?.addView(this)
+
+                }
+
+                if (shareMode != SlidanetSharingStyleType.PeekSlide &&
+                    shareMode != SlidanetSharingStyleType.PeekDefine) {
+
+                        Slidanet.mainHandler?.post {
+
+                            Slidanet.relativeLayout?.addView(Slidanet.referenceView)
+
+                        }
+                }
+
+                Slidanet.mainHandler?.post {
+
+                    Slidanet.editorContent?.addView(Slidanet.relativeLayout)
+                    Slidanet.editorContent?.addView(Slidanet.editorControl)
+                    initializeEditorResponse(contentAddress, initiator, Slidanet.editorContent!!)
+                }
+            } else {
+
+                Slidanet.mainHandler?.post {
+
+                    Slidanet.relativeLayout?.removeView(this)
+                    this.layoutParams = contentEditorLayoutParams
+                    Slidanet.relativeLayout?.addView(this)
+
+                    if (shareMode == SlidanetSharingStyleType.SlideUpAndDown ||
+                        shareMode == SlidanetSharingStyleType.SlideLeftAndRight ||
+                        shareMode == SlidanetSharingStyleType.SlideLeftAndRight) {
+
+                        Slidanet.relativeLayout?.removeView(Slidanet.referenceView)
+                        Slidanet.relativeLayout?.addView(Slidanet.referenceView)
+                    }
+
+                }
+            }
+        }
+    }
+
+    /*
+    private fun initializeEditorLayoutParams() {
+
+        val aspectRatio: Float = (bitmapWidth.toFloat()) / (bitmapHeight.toFloat())
+
+        var nw = 0
+        var nh = 0
+        var i = 1
+
+        while (nh < Slidanet.screenHeightInPixels && nw < Slidanet.screenWidthInPixels) {
+
+            nw = i
+            nh = (nw.toFloat() / aspectRatio).toInt()
+            i++
+        }
+
+        var editingScale = 1f
+
+        when (shareMode) {
+
+            SlidanetSharingStyleType.SlideAllDirections,
+            SlidanetSharingStyleType.SlideUpAndDown,
+            SlidanetSharingStyleType.SlideLeftAndRight -> {
+
+                editingScale = 3f
+            }
+
+            SlidanetSharingStyleType.PeekDefine,
+            SlidanetSharingStyleType.PeekSlide -> {
+
+                editingScale = 1f
+            }
+
+            else -> {}
+        }
+
+        Slidanet.rendererHandler.post{
+
+            scale = editingScale
+            initializeVertices(translationX, translationY)
+        }
 
         if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
 
             Slidanet.editorContent?.removeAllViews()
             Slidanet.relativeLayout?.removeAllViews()
+
         }
+
+        val referenceWidth = (nw.toFloat() * Slidanet.screenDensity / editingScale).toInt()
+        val referenceHeight = (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()
 
         when (shareMode) {
 
@@ -1067,59 +1273,84 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                 Slidanet.editorContent?.let {
 
-                    RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity / editingScale).toInt(),
-                                                (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()).also {
+                    RelativeLayout.LayoutParams(referenceWidth, referenceHeight).also {
                         it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                        Slidanet.referenceView.layoutParams = it
-                    }
+                        Slidanet.referenceView.layoutParams = it }
                 }
             }
 
             else -> {}
         }
 
+
         this.backgroundAlphaColor = 1f
 
+        when (shareMode) {
+
+            SlidanetSharingStyleType.SlideLeftAndRight -> {
+
+                RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight).also {
+                    it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                    Slidanet.contentInEditor?.let { editorObject ->
+                        //Slidanet.rendererHandler.post {
+                        editorObject.initializeVertices(editorObject.getNormalizedTranslationX(),
+                            editorObject.getNormalizedTranslationY())
+                        //}
+
+                        Slidanet.mainHandler?.post { this.layoutParams = it }
+
+                    }
+                }
+            }
+
+            SlidanetSharingStyleType.SlideUpAndDown -> {
+
+                RelativeLayout.LayoutParams(referenceWidth, referenceHeight * 3).also {
+                    it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                    Slidanet.contentInEditor?.let { editorObject ->
+                        //Slidanet.rendererHandler.post {
+                        editorObject.initializeVertices(editorObject.getNormalizedTranslationX(),
+                            editorObject.getNormalizedTranslationY())
+                        //}
+
+                        Slidanet.mainHandler?.post { this.layoutParams = it }
+                    }
+                }
+            }
+
+            else -> {
+
+                RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight * 3).also {
+                    it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
+                    Slidanet.contentInEditor?.let { editorObject ->
+
+                        //Slidanet.rendererHandler.post {
+                        editorObject.initializeVertices(editorObject.getNormalizedTranslationX(),
+                            editorObject.getNormalizedTranslationY())
+                        //}
+
+                        Slidanet.mainHandler?.post { this.layoutParams = it }
+
+                    }
+                }
+            }
+        }
+
+        if (shareMode == SlidanetSharingStyleType.PeekSlide ||
+            shareMode == SlidanetSharingStyleType.PeekDefine) {
+
+            Slidanet.referenceView.setBackgroundColor(Color.BLACK)
+
+        } else {
+
+            val border = GradientDrawable()
+            border.setColor(Color.argb(0,1,1,1))
+            border.setStroke(2, -0x1000000) //black border with full opacity
+            Slidanet.referenceView.background  = border
+
+        }
+
         if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
-
-            when (shareMode) {
-
-                SlidanetSharingStyleType.SlideLeftAndRight -> {
-
-                    RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity).toInt(),
-                                                (nw.toFloat() /3f / aspectRatio * Slidanet.screenDensity).toInt()).also {
-                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                        this.layoutParams = it
-                    }
-                }
-
-                SlidanetSharingStyleType.SlideUpAndDown -> {
-
-                    RelativeLayout.LayoutParams((nw.toFloat() /3f * Slidanet.screenDensity).toInt(),
-                                                (nh.toFloat() * Slidanet.screenDensity).toInt()).also {
-                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                        this.layoutParams = it
-                    }
-                }
-
-                else -> {
-
-                    RelativeLayout.LayoutParams((nw.toFloat() * Slidanet.screenDensity).toInt(),
-                                                (nh.toFloat() * Slidanet.screenDensity).toInt()).also {
-                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                        this.layoutParams = it
-                    }
-                }
-            }
-
-            if (shareMode == SlidanetSharingStyleType.PeekSlide ||
-                shareMode == SlidanetSharingStyleType.PeekDefine) {
-
-                    Slidanet.referenceView.setBackgroundColor(Color.BLACK)
-            } else {
-
-                Slidanet.referenceView.setBackgroundColor(Color.TRANSPARENT)
-            }
 
             if (shareMode == SlidanetSharingStyleType.PeekSlide ||
                 shareMode == SlidanetSharingStyleType.PeekDefine) {
@@ -1137,8 +1368,10 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             Slidanet.editorContent?.addView(Slidanet.relativeLayout)
             Slidanet.editorContent?.addView(Slidanet.editorControl)
+
         }
     }
+    */
 
     override fun getNormalizedTranslationX(): Float {
 
@@ -1348,6 +1581,11 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             makeCurrent(windowSurface)
 
+            if (editorContentAddress.isEmpty()) {
+
+                val isTheEditor = "yes"
+            }
+
             this.clearSurface()
 
             this.setViewport(textureWidth, textureHeight)
@@ -1466,7 +1704,7 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
             swapBuffers(windowSurface)
 
-            displayNeedsUpdate = false
+            //displayNeedsUpdate = false
         }
     }
 

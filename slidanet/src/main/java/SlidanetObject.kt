@@ -9,7 +9,7 @@ internal interface SlidanetObject {
     fun render()
     fun setVisibilityPreferences(preferences: MutableMap<String, Boolean>)
     fun setTakers(takersList: MutableMap<String, String>)
-    fun setShareTranslationParameters(x: Float, y: Float, z: Float)
+    fun setShareTranslationParameters(x: Float, y: Float, z: Float = 1f)
     fun setShareBoxParameters(beginX: Float, beginY: Float, endX: Float, endY: Float)
     fun setVisibilityPreference(preference: SlidanetVisibilityPreferenceType)
     fun getVisibilityPreference() : SlidanetVisibilityPreferenceType

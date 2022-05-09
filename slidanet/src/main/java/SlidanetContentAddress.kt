@@ -986,8 +986,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                     initializeEditorLayoutParams(initiator)
 
-                    //initializeEditorResponse(contentAddress, initiator, editorView)
-
                 }
             }
 
@@ -1068,8 +1066,16 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                 }
             }
 
-            val referenceWidth = (nw.toFloat() * Slidanet.screenDensity / editingScale).toInt()
-            val referenceHeight = (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()
+            var referenceWidth = nw
+            var referenceHeight = nh
+
+            if (shareMode == SlidanetSharingStyleType.SlideLeftAndRight ||
+                shareMode == SlidanetSharingStyleType.SlideUpAndDown ||
+                shareMode == SlidanetSharingStyleType.SlideAllDirections) {
+
+                referenceWidth = (nw.toFloat() * Slidanet.screenDensity / editingScale).toInt()
+                referenceHeight = (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()
+            }
 
             when (shareMode) {
 
@@ -1109,7 +1115,6 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                         contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight).apply {
 
                             this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                            //this.layoutParams = it
                         }
                     }
                 }
@@ -1121,7 +1126,17 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                         contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth, referenceHeight * 3).apply {
 
                             this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                            //this.layoutParams = it
+                        }
+                    }
+                }
+
+                SlidanetSharingStyleType.SlideAllDirections -> {
+
+                    Slidanet.mainHandler?.post {
+
+                        contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight * 3).apply {
+
+                            this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
                         }
                     }
                 }
@@ -1130,10 +1145,10 @@ internal class SlidanetContentAddress(private val contentAddress: String,
 
                     Slidanet.mainHandler?.post {
 
-                        contentEditorLayoutParams = RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight * 3).apply {
+                        contentEditorLayoutParams = RelativeLayout.LayoutParams((nw * Slidanet.screenDensity).toInt(),
+                                                                                (nh * Slidanet.screenDensity).toInt()).apply {
 
                             this.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                            //this.layoutParams = it
                         }
                     }
                 }
@@ -1206,172 +1221,21 @@ internal class SlidanetContentAddress(private val contentAddress: String,
                         Slidanet.relativeLayout?.addView(Slidanet.referenceView)
                     }
 
+                    /*
+
+                    if (shareMode == SlidanetSharingStyleType.PeekDefine ||
+                        shareMode == SlidanetSharingStyleType.PeekSlide) {
+
+                        Slidanet.rendererHandler.post {
+
+                            this.displayNeedsUpdate = true
+                        }
+                    }
+                    */
                 }
             }
         }
     }
-
-    /*
-    private fun initializeEditorLayoutParams() {
-
-        val aspectRatio: Float = (bitmapWidth.toFloat()) / (bitmapHeight.toFloat())
-
-        var nw = 0
-        var nh = 0
-        var i = 1
-
-        while (nh < Slidanet.screenHeightInPixels && nw < Slidanet.screenWidthInPixels) {
-
-            nw = i
-            nh = (nw.toFloat() / aspectRatio).toInt()
-            i++
-        }
-
-        var editingScale = 1f
-
-        when (shareMode) {
-
-            SlidanetSharingStyleType.SlideAllDirections,
-            SlidanetSharingStyleType.SlideUpAndDown,
-            SlidanetSharingStyleType.SlideLeftAndRight -> {
-
-                editingScale = 3f
-            }
-
-            SlidanetSharingStyleType.PeekDefine,
-            SlidanetSharingStyleType.PeekSlide -> {
-
-                editingScale = 1f
-            }
-
-            else -> {}
-        }
-
-        Slidanet.rendererHandler.post{
-
-            scale = editingScale
-            initializeVertices(translationX, translationY)
-        }
-
-        if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
-
-            Slidanet.editorContent?.removeAllViews()
-            Slidanet.relativeLayout?.removeAllViews()
-
-        }
-
-        val referenceWidth = (nw.toFloat() * Slidanet.screenDensity / editingScale).toInt()
-        val referenceHeight = (nh.toFloat() * Slidanet.screenDensity / editingScale).toInt()
-
-        when (shareMode) {
-
-            SlidanetSharingStyleType.SlideAllDirections,
-            SlidanetSharingStyleType.SlideLeftAndRight,
-            SlidanetSharingStyleType.PeekDefine,
-            SlidanetSharingStyleType.PeekSlide,
-            SlidanetSharingStyleType.SlideUpAndDown -> {
-
-                Slidanet.editorContent?.let {
-
-                    RelativeLayout.LayoutParams(referenceWidth, referenceHeight).also {
-                        it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                        Slidanet.referenceView.layoutParams = it }
-                }
-            }
-
-            else -> {}
-        }
-
-
-        this.backgroundAlphaColor = 1f
-
-        when (shareMode) {
-
-            SlidanetSharingStyleType.SlideLeftAndRight -> {
-
-                RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight).also {
-                    it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                    Slidanet.contentInEditor?.let { editorObject ->
-                        //Slidanet.rendererHandler.post {
-                        editorObject.initializeVertices(editorObject.getNormalizedTranslationX(),
-                            editorObject.getNormalizedTranslationY())
-                        //}
-
-                        Slidanet.mainHandler?.post { this.layoutParams = it }
-
-                    }
-                }
-            }
-
-            SlidanetSharingStyleType.SlideUpAndDown -> {
-
-                RelativeLayout.LayoutParams(referenceWidth, referenceHeight * 3).also {
-                    it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                    Slidanet.contentInEditor?.let { editorObject ->
-                        //Slidanet.rendererHandler.post {
-                        editorObject.initializeVertices(editorObject.getNormalizedTranslationX(),
-                            editorObject.getNormalizedTranslationY())
-                        //}
-
-                        Slidanet.mainHandler?.post { this.layoutParams = it }
-                    }
-                }
-            }
-
-            else -> {
-
-                RelativeLayout.LayoutParams(referenceWidth * 3, referenceHeight * 3).also {
-                    it.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
-                    Slidanet.contentInEditor?.let { editorObject ->
-
-                        //Slidanet.rendererHandler.post {
-                        editorObject.initializeVertices(editorObject.getNormalizedTranslationX(),
-                            editorObject.getNormalizedTranslationY())
-                        //}
-
-                        Slidanet.mainHandler?.post { this.layoutParams = it }
-
-                    }
-                }
-            }
-        }
-
-        if (shareMode == SlidanetSharingStyleType.PeekSlide ||
-            shareMode == SlidanetSharingStyleType.PeekDefine) {
-
-            Slidanet.referenceView.setBackgroundColor(Color.BLACK)
-
-        } else {
-
-            val border = GradientDrawable()
-            border.setColor(Color.argb(0,1,1,1))
-            border.setStroke(2, -0x1000000) //black border with full opacity
-            Slidanet.referenceView.background  = border
-
-        }
-
-        if (Slidanet.editingState == SlidanetEditingStateType.InActive) {
-
-            if (shareMode == SlidanetSharingStyleType.PeekSlide ||
-                shareMode == SlidanetSharingStyleType.PeekDefine) {
-
-                Slidanet.relativeLayout?.addView(Slidanet.referenceView)
-            }
-
-            Slidanet.relativeLayout?.addView(this)
-
-            if (shareMode != SlidanetSharingStyleType.PeekSlide &&
-                shareMode != SlidanetSharingStyleType.PeekDefine) {
-
-                Slidanet.relativeLayout?.addView(Slidanet.referenceView)
-            }
-
-            Slidanet.editorContent?.addView(Slidanet.relativeLayout)
-            Slidanet.editorContent?.addView(Slidanet.editorControl)
-
-        }
-    }
-    */
 
     override fun getNormalizedTranslationX(): Float {
 

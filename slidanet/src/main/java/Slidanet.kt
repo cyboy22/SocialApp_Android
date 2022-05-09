@@ -487,8 +487,10 @@ object Slidanet {
                         rendererHandler.post {
 
                             contentInEditor?.setShareMode(slidanetSharingStyle)
+                            contentInEditor?.setPeekEnabled(false)
 
                             it.setShareMode(slidanetSharingStyle)
+                            it.setPeekEnabled(false)
                             it.setShareTranslationParameters(x, y, 1f)
                             it.setShareBoxParameters(0f, 0f, 0f, 0f)
                             it.initializeVertices(x, y)
@@ -524,7 +526,7 @@ object Slidanet {
 
                         if (boxBeginX.absoluteValue > 1f || boxEndX.absoluteValue > 1f) return SlidanetResponseType.InvalidSlideParameters
                         if (boxBeginY.absoluteValue > 1f || boxEndY.absoluteValue > 1f) return SlidanetResponseType.InvalidSlideParameters
-                        if (boxEndX <= boxBeginX || boxEndY <= boxBeginY) return SlidanetResponseType.InvalidSlideParameters
+                        if (boxEndX < boxBeginX || boxEndY < boxBeginY) return SlidanetResponseType.InvalidSlideParameters
 
                         val request = JSONObject()
                         request.put(SlidanetConstants.slidanet_content_address, slidanetContentAddress)
@@ -536,8 +538,12 @@ object Slidanet {
                                                                    sharingStyle = slidanetSharingStyle)
                         rendererHandler.post {
 
+                            contentInEditor?.setShareMode(slidanetSharingStyle)
+                            contentInEditor?.setPeekEnabled(true)
+
                             it.setShareMode(slidanetSharingStyle)
-                            it.setShareTranslationParameters(0f,0f,0f)
+                            it.setPeekEnabled(true)
+                            it.setShareTranslationParameters(0f,0f,1f)
                             it.initializeVertices(0f,0f)
                             it.setShareBoxParameters(boxBeginX, boxBeginY, boxEndX, boxEndY)
 
